@@ -18,13 +18,8 @@ unsafe impl Send for Ptr { }
 unsafe impl Sync for Ptr { }
 
 #[inline(always)]
-const fn size_of<T>() -> isize {
-  core::mem::size_of::<T>() as isize
-}
-
-#[inline(always)]
 const fn offset_of_element_at_index<T>(index: isize) -> isize {
-  size_of::<T>().wrapping_mul(index)
+  (core::mem::size_of::<T>() as isize).wrapping_mul(index)
 }
 
 impl Ptr {
@@ -93,24 +88,32 @@ impl Ptr {
   /// arithmetic.
 
   #[inline(always)]
-  pub const fn add(self, offset: isize) -> Self {
-    Self(self.0.wrapping_offset(offset))
+  pub const fn offset(self, n: isize) -> Self {
+    Self(self.0.wrapping_offset(n))
+  }
+
+  /// Adds the given byte offset to the pointer's address with wrapping
+  /// arithmetic.
+
+  #[inline(always)]
+  pub const fn add(self, n: usize) -> Self {
+    Self(self.0.wrapping_add(n))
   }
 
   /// Subtracts the given byte offset from the pointer's address with wrapping
   /// arithmetic.
 
   #[inline(always)]
-  pub const fn sub(self, offset: isize) -> Self {
-    Self(self.0.wrapping_offset(offset.wrapping_neg()))
+  pub const fn sub(self, n: usize) -> Self {
+    Self(self.0.wrapping_sub(n))
   }
 
   /// Computes the difference in bytes between the two pointers' addresses with
   /// wrapping arithmetic.
 
   #[inline(always)]
-  pub fn diff(self, offset: Self) -> isize {
-    self.addr().wrapping_sub(offset.addr()) as isize
+  pub fn diff(self, other: Self) -> usize {
+    self.addr().wrapping_sub(other.addr())
   }
 
   /// Updates the pointer's address by bitwise and-ing it with the given mask.
@@ -122,7 +125,7 @@ impl Ptr {
 
   #[inline(always)]
   pub const fn gep<T>(self, index: isize) -> Self {
-    self.add(offset_of_element_at_index::<T>(index))
+    self.offset(offset_of_element_at_index::<T>(index))
   }
 
   /// # Safety:
@@ -340,7 +343,7 @@ impl core::ops::Add<isize> for Ptr {
 
   #[inline(always)]
   fn add(self, rhs: isize) -> Self::Output {
-    self.add(rhs)
+    self.offset(rhs)
   }
 }
 
@@ -351,12 +354,28 @@ impl core::ops::AddAssign<isize> for Ptr {
   }
 }
 
+impl core::ops::Add<usize> for Ptr {
+  type Output = Self;
+
+  #[inline(always)]
+  fn add(self, rhs: usize) -> Self::Output {
+    self.add(rhs)
+  }
+}
+
+impl core::ops::AddAssign<usize> for Ptr {
+  #[inline(always)]
+  fn add_assign(&mut self, rhs: usize) {
+    *self = *self + rhs;
+  }
+}
+
 impl core::ops::Sub<isize> for Ptr {
   type Output = Self;
 
   #[inline(always)]
   fn sub(self, rhs: isize) -> Self::Output {
-    self.sub(rhs)
+    self.offset(rhs.wrapping_neg())
   }
 }
 
@@ -367,8 +386,24 @@ impl core::ops::SubAssign<isize> for Ptr {
   }
 }
 
+impl core::ops::Sub<usize> for Ptr {
+  type Output = Self;
+
+  #[inline(always)]
+  fn sub(self, rhs: usize) -> Self::Output {
+    self.sub(rhs)
+  }
+}
+
+impl core::ops::SubAssign<usize> for Ptr {
+  #[inline(always)]
+  fn sub_assign(&mut self, rhs: usize) {
+    *self = *self - rhs;
+  }
+}
+
 impl core::ops::Sub<Ptr> for Ptr {
-  type Output = isize;
+  type Output = usize;
 
   #[inline(always)]
   fn sub(self, rhs: Self) -> Self::Output {
