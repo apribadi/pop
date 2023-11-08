@@ -11,7 +11,7 @@
   PartialOrd,
 )]
 #[repr(transparent)]
-pub struct Ptr(*const u8);
+pub struct Ptr(*mut u8);
 
 unsafe impl Send for Ptr { }
 
@@ -30,7 +30,7 @@ impl Ptr {
     // Once the `strict_provenance` feature has been stabilized, this should
     // use the `core::ptr::invalid` function.
 
-    Self(unsafe { core::mem::transmute::<usize, *const u8>(addr) })
+    Self(unsafe { core::mem::transmute::<usize, *mut u8>(addr) })
   }
 
   /// An invalid pointer with address zero.
@@ -49,7 +49,7 @@ impl Ptr {
     // Once the `strict_provenance` feature has been stabilized, this should
     // use the `addr` method on the primitive pointer type.
 
-    unsafe { core::mem::transmute::<*const u8, usize>(self.0) }
+    unsafe { core::mem::transmute::<*mut u8, usize>(self.0) }
   }
 
   /// Whether the pointer has address zero.
@@ -61,12 +61,12 @@ impl Ptr {
 
   #[inline(always)]
   pub const fn from_const_ptr<T: ?Sized>(x: *const T) -> Self {
-    Self(x as *const u8)
+    Self(x as *mut u8)
   }
 
   #[inline(always)]
   pub const fn from_mut_ptr<T: ?Sized>(x: *mut T) -> Self {
-    Self(x as *const u8)
+    Self(x as *mut u8)
   }
 
   #[inline(always)]
@@ -281,11 +281,6 @@ impl Ptr {
   #[inline(always)]
   pub const unsafe fn as_non_null<T>(self) -> core::ptr::NonNull<T> {
     unsafe { core::ptr::NonNull::new_unchecked(self.as_mut_ptr()) }
-  }
-
-  #[inline(always)]
-  pub fn as_option_non_null<T>(self) -> Option<core::ptr::NonNull<T>> {
-    core::ptr::NonNull::new(self.as_mut_ptr())
   }
 }
 
