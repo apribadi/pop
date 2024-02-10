@@ -11,18 +11,18 @@
   PartialOrd,
 )]
 #[repr(transparent)]
-pub struct Ptr(*mut u8);
+pub struct ptr(*mut u8);
 
-unsafe impl Send for Ptr { }
+unsafe impl Send for ptr { }
 
-unsafe impl Sync for Ptr { }
+unsafe impl Sync for ptr { }
 
 #[inline(always)]
 const fn offset_of_element_at_index<T>(index: isize) -> isize {
   (core::mem::size_of::<T>() as isize).wrapping_mul(index)
 }
 
-impl Ptr {
+impl ptr {
   /// Creates a pointer with the given address and no provenance.
 
   #[inline(always)]
@@ -284,56 +284,56 @@ impl Ptr {
   }
 }
 
-impl<T: ?Sized> From<*const T> for Ptr {
+impl<T: ?Sized> From<*const T> for ptr {
   #[inline(always)]
   fn from(value: *const T) -> Self {
     Self::from_const_ptr(value)
   }
 }
 
-impl<T: ?Sized> From<*mut T> for Ptr {
+impl<T: ?Sized> From<*mut T> for ptr {
   #[inline(always)]
   fn from(value: *mut T) -> Self {
     Self::from_mut_ptr(value)
   }
 }
 
-impl<T: ?Sized> From<&T> for Ptr {
+impl<T: ?Sized> From<&T> for ptr {
   #[inline(always)]
   fn from(value: &T) -> Self {
     Self::from_ref(value)
   }
 }
 
-impl<T: ?Sized> From<&mut T> for Ptr {
+impl<T: ?Sized> From<&mut T> for ptr {
   #[inline(always)]
   fn from(value: &mut T) -> Self {
     Self::from_mut_ref(value)
   }
 }
 
-impl<T: ?Sized> From<core::ptr::NonNull<T>> for Ptr {
+impl<T: ?Sized> From<core::ptr::NonNull<T>> for ptr {
   #[inline(always)]
   fn from(value: core::ptr::NonNull<T>) -> Self {
     Self::from_non_null(value)
   }
 }
 
-impl<T> From<Ptr> for *const T {
+impl<T> From<ptr> for *const T {
   #[inline(always)]
-  fn from(value: Ptr) -> *const T {
+  fn from(value: ptr) -> *const T {
     value.as_const_ptr()
   }
 }
 
-impl<T> From<Ptr> for *mut T {
+impl<T> From<ptr> for *mut T {
   #[inline(always)]
-  fn from(value: Ptr) -> *mut T {
+  fn from(value: ptr) -> *mut T {
     value.as_mut_ptr()
   }
 }
 
-impl core::ops::Add<isize> for Ptr {
+impl core::ops::Add<isize> for ptr {
   type Output = Self;
 
   #[inline(always)]
@@ -342,14 +342,14 @@ impl core::ops::Add<isize> for Ptr {
   }
 }
 
-impl core::ops::AddAssign<isize> for Ptr {
+impl core::ops::AddAssign<isize> for ptr {
   #[inline(always)]
   fn add_assign(&mut self, rhs: isize) {
     *self = *self + rhs;
   }
 }
 
-impl core::ops::Add<usize> for Ptr {
+impl core::ops::Add<usize> for ptr {
   type Output = Self;
 
   #[inline(always)]
@@ -358,14 +358,14 @@ impl core::ops::Add<usize> for Ptr {
   }
 }
 
-impl core::ops::AddAssign<usize> for Ptr {
+impl core::ops::AddAssign<usize> for ptr {
   #[inline(always)]
   fn add_assign(&mut self, rhs: usize) {
     *self = *self + rhs;
   }
 }
 
-impl core::ops::Sub<isize> for Ptr {
+impl core::ops::Sub<isize> for ptr {
   type Output = Self;
 
   #[inline(always)]
@@ -374,14 +374,14 @@ impl core::ops::Sub<isize> for Ptr {
   }
 }
 
-impl core::ops::SubAssign<isize> for Ptr {
+impl core::ops::SubAssign<isize> for ptr {
   #[inline(always)]
   fn sub_assign(&mut self, rhs: isize) {
     *self = *self - rhs;
   }
 }
 
-impl core::ops::Sub<usize> for Ptr {
+impl core::ops::Sub<usize> for ptr {
   type Output = Self;
 
   #[inline(always)]
@@ -390,14 +390,14 @@ impl core::ops::Sub<usize> for Ptr {
   }
 }
 
-impl core::ops::SubAssign<usize> for Ptr {
+impl core::ops::SubAssign<usize> for ptr {
   #[inline(always)]
   fn sub_assign(&mut self, rhs: usize) {
     *self = *self - rhs;
   }
 }
 
-impl core::ops::Sub<Ptr> for Ptr {
+impl core::ops::Sub<ptr> for ptr {
   type Output = usize;
 
   #[inline(always)]
@@ -406,7 +406,7 @@ impl core::ops::Sub<Ptr> for Ptr {
   }
 }
 
-impl core::ops::BitAnd<usize> for Ptr {
+impl core::ops::BitAnd<usize> for ptr {
   type Output = Self;
 
   #[inline(always)]
@@ -415,14 +415,14 @@ impl core::ops::BitAnd<usize> for Ptr {
   }
 }
 
-impl core::ops::BitAndAssign<usize> for Ptr {
+impl core::ops::BitAndAssign<usize> for ptr {
   #[inline(always)]
   fn bitand_assign(&mut self, rhs: usize) {
     *self = *self & rhs;
   }
 }
 
-impl core::fmt::Debug for Ptr {
+impl core::fmt::Debug for ptr {
   fn fmt(&self, out: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
     write!(out, "0x{:01$x}", self.addr(), (usize::BITS / 4) as usize)
   }
