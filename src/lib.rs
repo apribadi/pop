@@ -123,6 +123,16 @@ impl ptr {
     ptr(x.0.wrapping_sub(ptr::addr(x) & ! mask))
   }
 
+  /// Computes the offset needed to add to `x` to align it to an address that
+  /// is a multiple of `align`.
+  ///
+  /// If `align` is not a power of two, returns an unspecified value.
+
+  #[inline(always)]
+  pub fn align_offset(x: impl Into<ptr>, align: usize) -> usize {
+    ptr::addr(x) & align.wrapping_neg()
+  }
+
   #[inline(always)]
   pub fn gep<T>(x: impl Into<ptr>, index: isize) -> ptr {
     ptr::offset(x, (core::mem::size_of::<T>() as isize).wrapping_mul(index))
