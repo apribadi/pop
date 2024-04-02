@@ -295,6 +295,16 @@ impl ptr {
     let x = x.into();
     unsafe { U::from_ptr(x) }
   }
+
+  #[inline(always)]
+  pub unsafe fn cast_dst<T, U>(x: T, y: U::Meta) -> U
+  where
+    T: Into<ptr>,
+    U: WideRef
+  {
+    let x = x.into();
+    unsafe { U::from_ptr(x, y) }
+  }
 }
 
 impl<T: ?Sized> From<*const T> for ptr {
@@ -438,6 +448,12 @@ pub trait ThinRef {
   unsafe fn from_ptr(x: ptr) -> Self;
 }
 
+pub trait WideRef {
+  type Meta;
+
+  unsafe fn from_ptr(x: ptr, y: Self::Meta) -> Self;
+}
+
 impl<'a, T> ThinRef for &'a T {
   #[inline(always)]
   unsafe fn from_ptr(x: ptr) -> Self {
@@ -449,5 +465,23 @@ impl<'a, T> ThinRef for &'a mut T {
   #[inline(always)]
   unsafe fn from_ptr(x: ptr) -> Self {
     unsafe { x.as_mut_ref::<T>() }
+  }
+}
+
+impl<'a, T> WideRef for &'a [T] {
+  type Meta = usize;
+
+  #[inline(always)]
+  unsafe fn from_ptr(x: ptr, y: Self::Meta) -> Self {
+    unsafe { x.as_slice_ref::<T>(y) }
+  }
+}
+
+impl<'a, T> WideRef for &'a mut [T] {
+  type Meta = usize;
+
+  #[inline(always)]
+  unsafe fn from_ptr(x: ptr, y: Self::Meta) -> Self {
+    unsafe { x.as_slice_mut_ref::<T>(y) }
   }
 }
