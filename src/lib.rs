@@ -285,6 +285,16 @@ impl ptr {
   pub const unsafe fn as_non_null<T>(self) -> core::ptr::NonNull<T> {
     unsafe { core::ptr::NonNull::new_unchecked(self.as_mut_ptr()) }
   }
+
+  #[inline(always)]
+  pub unsafe fn cast<T, U>(x: T) -> U
+  where
+    T: Into<ptr>,
+    U: ThinRef
+  {
+    let x = x.into();
+    unsafe { U::from_ptr(x) }
+  }
 }
 
 impl<T: ?Sized> From<*const T> for ptr {
@@ -421,5 +431,23 @@ impl core::ops::Neg for ptr {
 impl core::fmt::Debug for ptr {
   fn fmt(&self, out: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
     write!(out, "0x{:01$x}", self.addr(), usize::BITS as usize / 4)
+  }
+}
+
+pub trait ThinRef {
+  unsafe fn from_ptr(x: ptr) -> Self;
+}
+
+impl<'a, T> ThinRef for &'a T {
+  #[inline(always)]
+  unsafe fn from_ptr(x: ptr) -> Self {
+    unsafe { x.as_ref::<T>() }
+  }
+}
+
+impl<'a, T> ThinRef for &'a mut T {
+  #[inline(always)]
+  unsafe fn from_ptr(x: ptr) -> Self {
+    unsafe { x.as_mut_ref::<T>() }
   }
 }
