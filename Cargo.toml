@@ -1,7 +1,7 @@
 [package]
 authors = ["Aaron Pribadi <aaron.pribadi@gmail.com>"]
 categories = ["no-std", "rust-patterns"]
-description = "plain old pointer - a pointer with neither pointee nor mutability annotations"
+description = "plain old pointers - a pointer type with neither pointee nor mutability information"
 edition = "2021"
 license = "Artistic-2.0"
 name = "pop"
