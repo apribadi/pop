@@ -283,27 +283,18 @@ impl ptr {
 
   #[inline(always)]
   pub const unsafe fn as_non_null<T>(self) -> core::ptr::NonNull<T> {
-    unsafe { core::ptr::NonNull::new_unchecked(self.as_mut_ptr()) }
+    let x = self.as_mut_ptr();
+    unsafe { core::ptr::NonNull::new_unchecked(x) }
   }
 
-  #[inline(always)]
-  pub unsafe fn cast<T, U>(x: T) -> U
-  where
-    T: Into<ptr>,
-    U: ThinRef
-  {
-    let x = x.into();
-    unsafe { U::from_ptr(x) }
-  }
+  /// # Safety:
+  ///
+  /// The pointer must not have address zero.
 
   #[inline(always)]
-  pub unsafe fn cast_dst<T, U>(x: T, y: U::Meta) -> U
-  where
-    T: Into<ptr>,
-    U: WideRef
-  {
-    let x = x.into();
-    unsafe { U::from_ptr(x, y) }
+  pub const unsafe fn as_slice_non_null<T>(self, len: usize) -> core::ptr::NonNull<[T]> {
+    let x = self.as_slice_mut_ptr(len);
+    unsafe { core::ptr::NonNull::new_unchecked(x) }
   }
 }
 
@@ -441,47 +432,5 @@ impl core::ops::Neg for ptr {
 impl core::fmt::Debug for ptr {
   fn fmt(&self, out: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
     write!(out, "0x{:01$x}", self.addr(), usize::BITS as usize / 4)
-  }
-}
-
-pub trait ThinRef {
-  unsafe fn from_ptr(x: ptr) -> Self;
-}
-
-pub trait WideRef {
-  type Meta;
-
-  unsafe fn from_ptr(x: ptr, y: Self::Meta) -> Self;
-}
-
-impl<'a, T> ThinRef for &'a T {
-  #[inline(always)]
-  unsafe fn from_ptr(x: ptr) -> Self {
-    unsafe { x.as_ref::<T>() }
-  }
-}
-
-impl<'a, T> ThinRef for &'a mut T {
-  #[inline(always)]
-  unsafe fn from_ptr(x: ptr) -> Self {
-    unsafe { x.as_mut_ref::<T>() }
-  }
-}
-
-impl<'a, T> WideRef for &'a [T] {
-  type Meta = usize;
-
-  #[inline(always)]
-  unsafe fn from_ptr(x: ptr, y: Self::Meta) -> Self {
-    unsafe { x.as_slice_ref::<T>(y) }
-  }
-}
-
-impl<'a, T> WideRef for &'a mut [T] {
-  type Meta = usize;
-
-  #[inline(always)]
-  unsafe fn from_ptr(x: ptr, y: Self::Meta) -> Self {
-    unsafe { x.as_slice_mut_ref::<T>(y) }
   }
 }
