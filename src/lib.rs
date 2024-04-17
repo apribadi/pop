@@ -136,7 +136,7 @@ impl ptr {
   /// If `align` is not a power of two, returns an unspecified value.
 
   #[inline(always)]
-  pub fn is_aligned_to(self, align: usize) -> usize {
+  pub fn is_aligned_to(self, align: usize) -> bool {
     self.addr() & align - 1 == 0
   }
 
