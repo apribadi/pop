@@ -131,6 +131,15 @@ impl ptr {
     self.neg() & align - 1
   }
 
+  /// Determins whether the pointer's address is a multiple of `align`.
+  ///
+  /// If `align` is not a power of two, returns an unspecified value.
+
+  #[inline(always)]
+  pub fn is_aligned_to(self, align: usize) -> usize {
+    self.addr() & align - 1 == 0
+  }
+
   /// # Safety:
   ///
   /// See `core::ptr::read`.
