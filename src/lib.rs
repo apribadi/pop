@@ -1,6 +1,8 @@
 #![doc = include_str!("../README.md")]
 #![no_std]
 
+/// TODO
+
 #[derive(
   Clone,
   Copy,
@@ -18,19 +20,16 @@ unsafe impl Send for ptr { }
 unsafe impl Sync for ptr { }
 
 impl ptr {
+  /// An invalid pointer with address zero.
+
+  pub const NULL: ptr = Self::invalid(0);
+
   /// Creates a pointer with the given address and no provenance.
 
   #[inline(always)]
   pub const fn invalid(addr: usize) -> ptr {
-    // Once the `strict_provenance` feature has been stabilized, this should
-    // use the `core::ptr::invalid` function.
-
     ptr(unsafe { core::mem::transmute::<usize, *mut u8>(addr) })
   }
-
-  /// An invalid pointer with address zero.
-
-  pub const NULL: ptr = Self::invalid(0);
 
   /// Gets the address of the pointer.
 
@@ -40,9 +39,6 @@ impl ptr {
     //
     // Transmuting a pointer into an integer in a const context is undefined
     // behavior.
-
-    // Once the `strict_provenance` feature has been stabilized, this should
-    // use the `addr` method on the primitive pointer type.
 
     unsafe { core::mem::transmute::<*mut u8, usize>(self.0) }
   }
@@ -54,25 +50,35 @@ impl ptr {
     self.addr() == 0
   }
 
+  /// Converts from a `*const T`.
+
   #[inline(always)]
   pub const fn from_const_ptr<T: ?Sized>(x: *const T) -> ptr {
     ptr(x as *mut u8)
   }
+
+  /// Converts from a `*mut T`.
 
   #[inline(always)]
   pub const fn from_mut_ptr<T: ?Sized>(x: *mut T) -> ptr {
     ptr(x as *mut u8)
   }
 
+  /// Converts from a `&T`.
+
   #[inline(always)]
   pub const fn from_ref<T: ?Sized>(x: &T) -> ptr {
     Self::from_const_ptr(x)
   }
 
+  /// Converts from a `&mut T`.
+
   #[inline(always)]
   pub fn from_mut_ref<T: ?Sized>(x: &mut T) -> ptr {
     Self::from_mut_ptr(x)
   }
+
+  /// Converts from a `NonNull<T>`.
 
   #[inline(always)]
   pub const fn from_non_null<T: ?Sized>(x: core::ptr::NonNull<T>) -> ptr {
@@ -107,28 +113,22 @@ impl ptr {
   /// wrapping arithmetic.
 
   #[inline(always)]
-  pub fn diff(self, other: Self) -> usize {
-    self.addr().wrapping_sub(other.addr())
+  pub fn diff(self, p: Self) -> usize {
+    self.addr().wrapping_sub(p.addr())
   }
 
+  /// Indexes into an array of `T`s.
+
   #[inline(always)]
-  pub const fn gep<T>(self, index: isize) -> ptr {
-    self.offset((core::mem::size_of::<T>() as isize).wrapping_mul(index))
+  pub const fn index<T>(self, i: usize) -> ptr {
+    self.add(size_of::<T>().wrapping_mul(i))
   }
+
+  /// Negates the address.
 
   #[inline(always)]
   pub fn neg(self) -> usize {
     self.addr().wrapping_neg()
-  }
-
-  /// Computes the offset needed to add to `x` to align it to an address that
-  /// is a multiple of `align`.
-  ///
-  /// If `align` is not a power of two, returns an unspecified value.
-
-  #[inline(always)]
-  pub fn align_offset(self, align: usize) -> usize {
-    self.neg() & align - 1
   }
 
   /// Determins whether the pointer's address is a multiple of `align`.
@@ -140,7 +140,7 @@ impl ptr {
     self.addr() & align - 1 == 0
   }
 
-  /// # Safety:
+  /// # SAFETY
   ///
   /// See `core::ptr::read`.
 
@@ -150,7 +150,7 @@ impl ptr {
     unsafe { core::ptr::read(x) }
   }
 
-  /// # Safety:
+  /// # SAFETY
   ///
   /// See `core::ptr::read_unaligned`.
 
@@ -160,7 +160,7 @@ impl ptr {
     unsafe { core::ptr::read_unaligned(x) }
   }
 
-  /// # Safety:
+  /// # SAFETY
   ///
   /// See `core::ptr::read_volatile`.
 
@@ -170,7 +170,7 @@ impl ptr {
     unsafe { core::ptr::read_volatile(x) }
   }
 
-  /// # Safety:
+  /// # SAFETY
   ///
   /// See `core::ptr::write`.
 
@@ -180,7 +180,7 @@ impl ptr {
     unsafe { core::ptr::write(x, value) }
   }
 
-  /// # Safety:
+  /// # SAFETY
   ///
   /// See `core::ptr::write_unaligned`.
 
@@ -190,7 +190,7 @@ impl ptr {
     unsafe { core::ptr::write_unaligned(x, value) }
   }
 
-  /// # Safety:
+  /// # SAFETY
   ///
   /// See `core::ptr::write_volatile`.
 
@@ -200,7 +200,7 @@ impl ptr {
     unsafe { core::ptr::write_volatile(x, value) }
   }
 
-  /// # Safety:
+  /// # SAFETY
   ///
   /// See `core::ptr::replace`.
 
@@ -210,7 +210,7 @@ impl ptr {
     unsafe { core::ptr::replace(x, value) }
   }
 
-  /// # Safety:
+  /// # SAFETY
   ///
   /// See `core::ptr::drop_in_place`.
 
@@ -220,7 +220,7 @@ impl ptr {
     unsafe { core::ptr::drop_in_place(x) }
   }
 
-  /// # Safety:
+  /// # SAFETY
   ///
   /// See `core::ptr::copy_nonoverlapping`.
 
@@ -231,7 +231,7 @@ impl ptr {
     unsafe { core::ptr::copy_nonoverlapping::<T>(src, dst, count) };
   }
 
-  /// # Safety:
+  /// # SAFETY
   ///
   /// See `core::ptr::swap_nonoverlapping`.
 
@@ -242,25 +242,35 @@ impl ptr {
     unsafe { core::ptr::swap_nonoverlapping::<T>(x, y, count) };
   }
 
+  /// Converts into a `*const T`.
+
   #[inline(always)]
   pub const fn as_const_ptr<T>(self) -> *const T {
     self.0 as *const T
   }
+
+  /// Converts into a `*mut T`.
 
   #[inline(always)]
   pub const fn as_mut_ptr<T>(self) -> *mut T {
     self.0 as *mut T
   }
 
+  /// Converts into a `*const [T]`.
+
   #[inline(always)]
   pub const fn as_slice_const_ptr<T>(self, len: usize) -> *const [T] {
     core::ptr::slice_from_raw_parts(self.as_const_ptr(), len)
   }
 
+  /// Converts into a `*mut [T]`.
+
   #[inline(always)]
   pub const fn as_slice_mut_ptr<T>(self, len: usize) -> *mut [T] {
     self.as_slice_const_ptr::<T>(len) as *mut [T]
   }
+
+  /// Converts into a `&T`.
 
   #[inline(always)]
   pub const unsafe fn as_ref<'a, T>(self) -> &'a T {
@@ -268,11 +278,15 @@ impl ptr {
     unsafe { &*x }
   }
 
+  /// Converts into a `&mut T`.
+
   #[inline(always)]
   pub unsafe fn as_mut_ref<'a, T>(self) -> &'a mut T {
     let x = self.as_mut_ptr();
     unsafe { &mut *x }
   }
+
+  /// Converts into a `&[T]`.
 
   #[inline(always)]
   pub const unsafe fn as_slice_ref<'a, T>(self, len: usize) -> &'a [T] {
@@ -280,13 +294,17 @@ impl ptr {
     unsafe { &*x }
   }
 
+  /// Converts into a `&mut [T]`.
+
   #[inline(always)]
   pub unsafe fn as_slice_mut_ref<'a, T>(self, len: usize) -> &'a mut [T] {
     let x = self.as_slice_mut_ptr(len);
     unsafe { &mut *x }
   }
 
-  /// # Safety:
+  /// Converts into a `NonNull<T>`.
+  ///
+  /// # SAFETY
   ///
   /// The pointer must not have address zero.
 
@@ -296,7 +314,9 @@ impl ptr {
     unsafe { core::ptr::NonNull::new_unchecked(x) }
   }
 
-  /// # Safety:
+  /// Converts into a `NonNull<[T]>`.
+  ///
+  /// # SAFETY
   ///
   /// The pointer must not have address zero.
 

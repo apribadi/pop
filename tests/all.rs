@@ -1,3 +1,5 @@
+//! Tests
+
 use pop::ptr;
 
 #[test]
