@@ -3,15 +3,7 @@
 
 /// TODO
 
-#[derive(
-  Clone,
-  Copy,
-  Eq,
-  Hash,
-  Ord,
-  PartialEq,
-  PartialOrd,
-)]
+#[derive(Clone, Copy, Eq, Hash, Ord, PartialEq, PartialOrd)]
 #[repr(transparent)]
 pub struct ptr(*mut u8);
 
@@ -20,9 +12,16 @@ unsafe impl Send for ptr { }
 unsafe impl Sync for ptr { }
 
 impl ptr {
-  /// An invalid pointer with address zero.
+  /// A pointer with address zero and no provenance.
 
-  pub const NULL: ptr = Self::invalid(0);
+  pub const NULL: ptr = ptr::invalid(0);
+
+  /// Whether the pointer has address zero.
+
+  #[inline(always)]
+  pub fn is_null(self) -> bool {
+    self.addr() == 0
+  }
 
   /// Creates a pointer with the given address and no provenance.
 
@@ -35,271 +34,73 @@ impl ptr {
 
   #[inline(always)]
   pub fn addr(self) -> usize {
-    // NB: This must not be a `const` function.
-    //
-    // Transmuting a pointer into an integer in a const context is undefined
-    // behavior.
+    // NB: This must NOT be `const`. Transmuting a pointer into an integer in a
+    // const context is undefined behavior.
 
     unsafe { core::mem::transmute::<*mut u8, usize>(self.0) }
   }
 
-  /// Whether the pointer has address zero.
+  /// Changes the address of the pointer while keeping the provenance.
 
   #[inline(always)]
-  pub fn is_null(self) -> bool {
-    self.addr() == 0
-  }
-
-  /// Converts from a `*const T`.
-
-  #[inline(always)]
-  pub const fn from_const_ptr<T: ?Sized>(x: *const T) -> ptr {
-    ptr(x as *mut u8)
-  }
-
-  /// Converts from a `*mut T`.
-
-  #[inline(always)]
-  pub const fn from_mut_ptr<T: ?Sized>(x: *mut T) -> ptr {
-    ptr(x as *mut u8)
-  }
-
-  /// Converts from a `&T`.
-
-  #[inline(always)]
-  pub const fn from_ref<T: ?Sized>(x: &T) -> ptr {
-    Self::from_const_ptr(x)
-  }
-
-  /// Converts from a `&mut T`.
-
-  #[inline(always)]
-  pub fn from_mut_ref<T: ?Sized>(x: &mut T) -> ptr {
-    Self::from_mut_ptr(x)
-  }
-
-  /// Converts from a `NonNull<T>`.
-
-  #[inline(always)]
-  pub const fn from_non_null<T: ?Sized>(x: core::ptr::NonNull<T>) -> ptr {
-    Self::from_mut_ptr(x.as_ptr())
-  }
-
-  /// Adds the given byte offset to the pointer's address with wrapping
-  /// arithmetic.
-
-  #[inline(always)]
-  pub const fn offset(self, n: isize) -> ptr {
-    ptr(self.0.wrapping_offset(n))
-  }
-
-  /// Adds the given byte offset to the pointer's address with wrapping
-  /// arithmetic.
-
-  #[inline(always)]
-  pub const fn add(self, n: usize) -> ptr {
-    ptr(self.0.wrapping_add(n))
-  }
-
-  /// Subtracts the given byte offset from the pointer's address with wrapping
-  /// arithmetic.
-
-  #[inline(always)]
-  pub const fn sub(self, n: usize) -> ptr {
-    ptr(self.0.wrapping_sub(n))
-  }
-
-  /// Computes the difference in bytes between the two pointers' addresses with
-  /// wrapping arithmetic.
-
-  #[inline(always)]
-  pub fn diff(self, p: Self) -> usize {
-    self.addr().wrapping_sub(p.addr())
-  }
-
-  /// Indexes into an array of `T`s.
-
-  #[inline(always)]
-  pub const fn index<T>(self, i: usize) -> ptr {
-    self.add(size_of::<T>().wrapping_mul(i))
-  }
-
-  /// Negates the address.
-
-  #[inline(always)]
-  pub fn neg(self) -> usize {
-    self.addr().wrapping_neg()
-  }
-
-  /// Determins whether the pointer's address is a multiple of `align`.
-  ///
-  /// If `align` is not a power of two, returns an unspecified value.
-
-  #[inline(always)]
-  pub fn is_aligned_to(self, align: usize) -> bool {
-    self.addr() & align - 1 == 0
-  }
-
-  /// # SAFETY
-  ///
-  /// See `core::ptr::read`.
-
-  #[inline(always)]
-  pub unsafe fn read<T>(self) -> T {
-    let x = self.as_const_ptr::<T>();
-    unsafe { core::ptr::read(x) }
-  }
-
-  /// # SAFETY
-  ///
-  /// See `core::ptr::read_unaligned`.
-
-  #[inline(always)]
-  pub unsafe fn read_unaligned<T>(self) -> T {
-    let x = self.as_const_ptr::<T>();
-    unsafe { core::ptr::read_unaligned(x) }
-  }
-
-  /// # SAFETY
-  ///
-  /// See `core::ptr::read_volatile`.
-
-  #[inline(always)]
-  pub unsafe fn read_volatile<T>(self) -> T {
-    let x = self.as_const_ptr::<T>();
-    unsafe { core::ptr::read_volatile(x) }
-  }
-
-  /// # SAFETY
-  ///
-  /// See `core::ptr::write`.
-
-  #[inline(always)]
-  pub unsafe fn write<T>(self, value: T) {
-    let x = self.as_mut_ptr::<T>();
-    unsafe { core::ptr::write(x, value) }
-  }
-
-  /// # SAFETY
-  ///
-  /// See `core::ptr::write_unaligned`.
-
-  #[inline(always)]
-  pub unsafe fn write_unaligned<T>(self, value: T) {
-    let x = self.as_mut_ptr::<T>();
-    unsafe { core::ptr::write_unaligned(x, value) }
-  }
-
-  /// # SAFETY
-  ///
-  /// See `core::ptr::write_volatile`.
-
-  #[inline(always)]
-  pub unsafe fn write_volatile<T>(self, value: T) {
-    let x = self.as_mut_ptr::<T>();
-    unsafe { core::ptr::write_volatile(x, value) }
-  }
-
-  /// # SAFETY
-  ///
-  /// See `core::ptr::replace`.
-
-  #[inline(always)]
-  pub unsafe fn replace<T>(self, value: T) -> T {
-    let x = self.as_mut_ptr::<T>();
-    unsafe { core::ptr::replace(x, value) }
-  }
-
-  /// # SAFETY
-  ///
-  /// See `core::ptr::drop_in_place`.
-
-  #[inline(always)]
-  pub unsafe fn drop_in_place<T>(self) {
-    let x = self.as_mut_ptr::<T>();
-    unsafe { core::ptr::drop_in_place(x) }
-  }
-
-  /// # SAFETY
-  ///
-  /// See `core::ptr::copy_nonoverlapping`.
-
-  #[inline(always)]
-  pub unsafe fn copy_nonoverlapping<T>(src: ptr, dst: ptr, count: usize) {
-    let src = src.as_const_ptr();
-    let dst = dst.as_mut_ptr();
-    unsafe { core::ptr::copy_nonoverlapping::<T>(src, dst, count) };
-  }
-
-  /// # SAFETY
-  ///
-  /// See `core::ptr::swap_nonoverlapping`.
-
-  #[inline(always)]
-  pub unsafe fn swap_nonoverlapping<T>(x: ptr, y: ptr, count: usize) {
-    let x = x.as_mut_ptr();
-    let y = y.as_mut_ptr();
-    unsafe { core::ptr::swap_nonoverlapping::<T>(x, y, count) };
+  pub fn with_addr(self, addr: usize) -> ptr {
+    ptr(self.0.wrapping_add(addr.wrapping_sub(self.addr())))
   }
 
   /// Converts into a `*const T`.
 
   #[inline(always)]
   pub const fn as_const_ptr<T>(self) -> *const T {
-    self.0 as *const T
+    self.0 as _
   }
 
   /// Converts into a `*mut T`.
 
   #[inline(always)]
   pub const fn as_mut_ptr<T>(self) -> *mut T {
-    self.0 as *mut T
+    self.0 as _
   }
 
   /// Converts into a `*const [T]`.
 
   #[inline(always)]
   pub const fn as_slice_const_ptr<T>(self, len: usize) -> *const [T] {
-    core::ptr::slice_from_raw_parts(self.as_const_ptr(), len)
+    core::ptr::slice_from_raw_parts(self.0 as _, len)
   }
 
   /// Converts into a `*mut [T]`.
 
   #[inline(always)]
   pub const fn as_slice_mut_ptr<T>(self, len: usize) -> *mut [T] {
-    self.as_slice_const_ptr::<T>(len) as *mut [T]
+    core::ptr::slice_from_raw_parts(self.0 as _, len) as _
   }
 
   /// Converts into a `&T`.
 
   #[inline(always)]
   pub const unsafe fn as_ref<'a, T>(self) -> &'a T {
-    let x = self.as_const_ptr();
-    unsafe { &*x }
+    &*(self.0 as *const _)
   }
 
   /// Converts into a `&mut T`.
 
   #[inline(always)]
   pub unsafe fn as_mut_ref<'a, T>(self) -> &'a mut T {
-    let x = self.as_mut_ptr();
-    unsafe { &mut *x }
+    &mut *(self.0 as *mut _)
   }
 
   /// Converts into a `&[T]`.
 
   #[inline(always)]
   pub const unsafe fn as_slice_ref<'a, T>(self, len: usize) -> &'a [T] {
-    let x = self.as_slice_const_ptr(len);
-    unsafe { &*x }
+    &*core::ptr::slice_from_raw_parts_mut(self.0 as _, len)
   }
 
   /// Converts into a `&mut [T]`.
 
   #[inline(always)]
   pub unsafe fn as_slice_mut_ref<'a, T>(self, len: usize) -> &'a mut [T] {
-    let x = self.as_slice_mut_ptr(len);
-    unsafe { &mut *x }
+    &mut *(core::ptr::slice_from_raw_parts_mut(self.0 as _, len) as *mut _)
   }
 
   /// Converts into a `NonNull<T>`.
@@ -310,8 +111,7 @@ impl ptr {
 
   #[inline(always)]
   pub const unsafe fn as_non_null<T>(self) -> core::ptr::NonNull<T> {
-    let x = self.as_mut_ptr();
-    unsafe { core::ptr::NonNull::new_unchecked(x) }
+    core::ptr::NonNull::new_unchecked(self.0 as _)
   }
 
   /// Converts into a `NonNull<[T]>`.
@@ -322,57 +122,161 @@ impl ptr {
 
   #[inline(always)]
   pub const unsafe fn as_slice_non_null<T>(self, len: usize) -> core::ptr::NonNull<[T]> {
-    let x = self.as_slice_mut_ptr(len);
-    unsafe { core::ptr::NonNull::new_unchecked(x) }
+    core::ptr::NonNull::new_unchecked(core::ptr::slice_from_raw_parts(self.0 as _, len) as _)
+  }
+
+  /// Given a pointer to the base of an array of `T`s, computes a pointer to
+  /// the element at the given index.
+
+  #[inline(always)]
+  pub const fn index<T>(self, i: usize) -> ptr {
+    ptr(self.0.wrapping_add(size_of::<T>().wrapping_mul(i)))
+  }
+
+  /// # SAFETY
+  ///
+  /// See `core::ptr::read`.
+
+  #[inline(always)]
+  pub const unsafe fn read<T>(self) -> T {
+    core::ptr::read(self.0 as _)
+  }
+
+  /// # SAFETY
+  ///
+  /// See `core::ptr::read_unaligned`.
+
+  #[inline(always)]
+  pub const unsafe fn read_unaligned<T>(self) -> T {
+    core::ptr::read_unaligned(self.0 as _)
+  }
+
+  /// # SAFETY
+  ///
+  /// See `core::ptr::read_volatile`.
+
+  #[inline(always)]
+  pub unsafe fn read_volatile<T>(self) -> T {
+    core::ptr::read_volatile(self.0 as _)
+  }
+
+  /// # SAFETY
+  ///
+  /// See `core::ptr::write`.
+
+  #[inline(always)]
+  pub unsafe fn write<T>(self, value: T) {
+    core::ptr::write(self.0 as _, value)
+  }
+
+  /// # SAFETY
+  ///
+  /// See `core::ptr::write_unaligned`.
+
+  #[inline(always)]
+  pub unsafe fn write_unaligned<T>(self, value: T) {
+    core::ptr::write_unaligned(self.0 as _, value)
+  }
+
+  /// # SAFETY
+  ///
+  /// See `core::ptr::write_volatile`.
+
+  #[inline(always)]
+  pub unsafe fn write_volatile<T>(self, value: T) {
+    core::ptr::write_volatile(self.0 as _, value)
+  }
+
+  /// # SAFETY
+  ///
+  /// See `core::ptr::replace`.
+
+  #[inline(always)]
+  pub unsafe fn replace<T>(self, value: T) -> T {
+    core::ptr::replace(self.0 as _, value)
+  }
+
+  /// # SAFETY
+  ///
+  /// See `core::ptr::drop_in_place`.
+
+  #[inline(always)]
+  pub unsafe fn drop_in_place<T: ?Sized>(self) {
+    core::ptr::drop_in_place(self.0 as _)
+  }
+
+  /// # SAFETY
+  ///
+  /// See `core::ptr::copy_nonoverlapping`.
+
+  #[inline(always)]
+  pub unsafe fn copy_nonoverlapping<T>(src: ptr, dst: ptr, count: usize) {
+    core::ptr::copy_nonoverlapping::<T>(src.0 as _, dst.0 as _, count) ;
+  }
+
+  /// # SAFETY
+  ///
+  /// See `core::ptr::swap_nonoverlapping`.
+
+  #[inline(always)]
+  pub unsafe fn swap_nonoverlapping<T>(x: ptr, y: ptr, count: usize) {
+    core::ptr::swap_nonoverlapping::<T>(x.0 as _, y.0 as _, count) ;
+  }
+}
+
+impl Default for ptr {
+  #[inline(always)]
+  fn default() -> ptr {
+    ptr::NULL
   }
 }
 
 impl<T: ?Sized> From<*const T> for ptr {
   #[inline(always)]
   fn from(value: *const T) -> ptr {
-    Self::from_const_ptr(value)
+    ptr(value as _)
   }
 }
 
 impl<T: ?Sized> From<*mut T> for ptr {
   #[inline(always)]
   fn from(value: *mut T) -> ptr {
-    Self::from_mut_ptr(value)
+    ptr(value as _)
   }
 }
 
 impl<T: ?Sized> From<&T> for ptr {
   #[inline(always)]
   fn from(value: &T) -> ptr {
-    Self::from_ref(value)
+    ptr(value as *const _ as _)
   }
 }
 
 impl<T: ?Sized> From<&mut T> for ptr {
   #[inline(always)]
   fn from(value: &mut T) -> ptr {
-    Self::from_mut_ref(value)
+    ptr(value as *mut _ as _)
   }
 }
 
 impl<T: ?Sized> From<core::ptr::NonNull<T>> for ptr {
   #[inline(always)]
   fn from(value: core::ptr::NonNull<T>) -> ptr {
-    Self::from_non_null(value)
+    ptr(value.as_ptr() as _)
   }
 }
 
 impl<T> From<ptr> for *const T {
   #[inline(always)]
   fn from(value: ptr) -> *const T {
-    value.as_const_ptr()
+    value.0 as _
   }
 }
 
 impl<T> From<ptr> for *mut T {
   #[inline(always)]
   fn from(value: ptr) -> *mut T {
-    value.as_mut_ptr()
+    value.0 as _
   }
 }
 
@@ -381,7 +285,7 @@ impl core::ops::Add<isize> for ptr {
 
   #[inline(always)]
   fn add(self, rhs: isize) -> ptr {
-    self.offset(rhs)
+    ptr(self.0.wrapping_offset(rhs))
   }
 }
 
@@ -397,7 +301,7 @@ impl core::ops::Add<usize> for ptr {
 
   #[inline(always)]
   fn add(self, rhs: usize) -> ptr {
-    self.add(rhs)
+    ptr(self.0.wrapping_add(rhs))
   }
 }
 
@@ -413,7 +317,7 @@ impl core::ops::Sub<isize> for ptr {
 
   #[inline(always)]
   fn sub(self, rhs: isize) -> ptr {
-    self.offset(rhs.wrapping_neg())
+    ptr(self.0.wrapping_offset(rhs.wrapping_neg()))
   }
 }
 
@@ -429,7 +333,7 @@ impl core::ops::Sub<usize> for ptr {
 
   #[inline(always)]
   fn sub(self, rhs: usize) -> ptr {
-    self.sub(rhs)
+    ptr(self.0.wrapping_sub(rhs))
   }
 }
 
@@ -441,25 +345,22 @@ impl core::ops::SubAssign<usize> for ptr {
 }
 
 impl core::ops::Sub<ptr> for ptr {
-  type Output = usize;
+  type Output = isize;
 
   #[inline(always)]
-  fn sub(self, rhs: ptr) -> usize {
-    self.diff(rhs)
+  fn sub(self, rhs: ptr) -> isize {
+    self.addr().wrapping_sub(rhs.addr()) as isize
   }
 }
 
-impl core::ops::Neg for ptr {
-  type Output = usize;
-
-  #[inline(always)]
-  fn neg(self) -> usize {
-    self.neg()
+impl core::fmt::Pointer for ptr {
+  fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    <*const u8 as core::fmt::Pointer>::fmt(&(self.0 as _), f)
   }
 }
 
 impl core::fmt::Debug for ptr {
-  fn fmt(&self, out: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-    write!(out, "0x{:01$x}", self.addr(), usize::BITS as usize / 4)
+  fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+    <ptr as core::fmt::Pointer>::fmt(self, f)
   }
 }
