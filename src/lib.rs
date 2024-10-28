@@ -1,7 +1,7 @@
 #![doc = include_str!("../README.md")]
 #![no_std]
 
-/// TODO
+/// A pointer without extra type information.
 
 #[derive(Clone, Copy, Eq, Hash, Ord, PartialEq, PartialOrd)]
 #[repr(transparent)]
@@ -30,7 +30,7 @@ impl ptr {
     ptr(unsafe { core::mem::transmute::<usize, *mut u8>(addr) })
   }
 
-  /// Gets the address of the pointer.
+  /// The address of the pointer.
 
   #[inline(always)]
   pub fn addr(self) -> usize {
@@ -76,6 +76,10 @@ impl ptr {
   }
 
   /// Converts into a `&T`.
+  ///
+  /// SAFETY
+  ///
+  /// The reference must be be valid for the lifetime.
 
   #[inline(always)]
   pub const unsafe fn as_ref<'a, T>(self) -> &'a T {
@@ -83,6 +87,10 @@ impl ptr {
   }
 
   /// Converts into a `&mut T`.
+  ///
+  /// SAFETY
+  ///
+  /// The reference must be be valid for the lifetime.
 
   #[inline(always)]
   pub unsafe fn as_mut_ref<'a, T>(self) -> &'a mut T {
@@ -90,17 +98,25 @@ impl ptr {
   }
 
   /// Converts into a `&[T]`.
+  ///
+  /// SAFETY
+  ///
+  /// The reference must be be valid for the lifetime.
 
   #[inline(always)]
   pub const unsafe fn as_slice_ref<'a, T>(self, len: usize) -> &'a [T] {
-    &*core::ptr::slice_from_raw_parts_mut(self.0 as _, len)
+    &*core::ptr::slice_from_raw_parts(self.0 as _, len)
   }
 
   /// Converts into a `&mut [T]`.
+  ///
+  /// SAFETY
+  ///
+  /// The reference must be be valid for the lifetime.
 
   #[inline(always)]
   pub unsafe fn as_slice_mut_ref<'a, T>(self, len: usize) -> &'a mut [T] {
-    &mut *(core::ptr::slice_from_raw_parts_mut(self.0 as _, len) as *mut _)
+    &mut *core::ptr::slice_from_raw_parts_mut(self.0 as _, len)
   }
 
   /// Converts into a `NonNull<T>`.
@@ -133,6 +149,8 @@ impl ptr {
     ptr(self.0.wrapping_add(size_of::<T>().wrapping_mul(i)))
   }
 
+  /// Reads a value.
+  ///
   /// # SAFETY
   ///
   /// See `core::ptr::read`.
@@ -142,6 +160,8 @@ impl ptr {
     core::ptr::read(self.0 as _)
   }
 
+  /// Reads a value without requiring alignment.
+  ///
   /// # SAFETY
   ///
   /// See `core::ptr::read_unaligned`.
@@ -160,6 +180,8 @@ impl ptr {
     core::ptr::read_volatile(self.0 as _)
   }
 
+  /// Writes a value.
+  ///
   /// # SAFETY
   ///
   /// See `core::ptr::write`.
@@ -169,6 +191,8 @@ impl ptr {
     core::ptr::write(self.0 as _, value)
   }
 
+  /// Writes a value without requiring alignment.
+  ///
   /// # SAFETY
   ///
   /// See `core::ptr::write_unaligned`.
@@ -187,6 +211,8 @@ impl ptr {
     core::ptr::write_volatile(self.0 as _, value)
   }
 
+  /// Reads a value and writes another value in its place.
+  ///
   /// # SAFETY
   ///
   /// See `core::ptr::replace`.
@@ -196,6 +222,8 @@ impl ptr {
     core::ptr::replace(self.0 as _, value)
   }
 
+  /// Drops the pointed-to value.
+  ///
   /// # SAFETY
   ///
   /// See `core::ptr::drop_in_place`.
@@ -205,6 +233,8 @@ impl ptr {
     core::ptr::drop_in_place(self.0 as _)
   }
 
+  /// Copies `count * size_of::<T>()` bytes from `src` to `dst`.
+  ///
   /// # SAFETY
   ///
   /// See `core::ptr::copy_nonoverlapping`.
@@ -214,6 +244,9 @@ impl ptr {
     core::ptr::copy_nonoverlapping::<T>(src.0 as _, dst.0 as _, count) ;
   }
 
+  /// Swaps `count * size_of::<T>()` bytes between the regions pointed-to by
+  /// `x` and `y`.
+  ///
   /// # SAFETY
   ///
   /// See `core::ptr::swap_nonoverlapping`.
