@@ -1,7 +1,7 @@
 #![doc = include_str!("../README.md")]
 #![no_std]
 
-/// A pointer without extra type information.
+/// A pointer type without extras.
 
 #[derive(Clone, Copy, Eq, Hash, Ord, PartialEq, PartialOrd)]
 #[repr(transparent)]
@@ -16,7 +16,7 @@ impl ptr {
 
   pub const NULL: ptr = ptr::invalid(0);
 
-  /// Whether the pointer has address zero.
+  /// Whether the pointer's address is zero.
 
   #[inline(always)]
   pub fn is_null(self) -> bool {
@@ -65,7 +65,8 @@ impl ptr {
   /// For a given power of two `align`, determines whether the address of the
   /// pointer is a multiple of `align`.
   ///
-  /// If `align` is not a power of two, this has an unspecified behavior.
+  /// If `align` is not a power of two, then the behavior of this function is
+  /// unspecified.
 
   #[inline(always)]
   pub fn is_aligned_to(self, align: usize) -> bool {
@@ -90,7 +91,8 @@ impl ptr {
 
   /// Aligns a pointer downwards.
   ///
-  /// If `align` is not a power of two, this has an unspecified behavior.
+  /// If `align` is not a power of two, then the behavior of this function is
+  /// unspecified.
 
   #[inline(always)]
   pub fn align_down_to(self, align: usize) -> ptr {
@@ -101,7 +103,8 @@ impl ptr {
   ///
   /// `p.align_down_to(align) == p - p.align_down_to_offset(align)`
   ///
-  /// If `align` is not a power of two, this has an unspecified behavior.
+  /// If `align` is not a power of two, then the behavior of this function is
+  /// unspecified.
 
   #[inline(always)]
   pub fn align_down_to_offset(self, align: usize) -> usize {
@@ -126,7 +129,8 @@ impl ptr {
 
   /// Aligns a pointer upwards.
   ///
-  /// If `align` is not a power of two, this has an unspecified behavior.
+  /// If `align` is not a power of two, then the behavior of this function is
+  /// unspecified.
 
   #[inline(always)]
   pub fn align_up_to(self, align: usize) -> ptr {
@@ -137,7 +141,8 @@ impl ptr {
   ///
   /// `p.align_up_to(align) == p + p.align_up_to_offset(align)`
   ///
-  /// If `align` is not a power of two, this has an unspecified behavior.
+  /// If `align` is not a power of two, then the behavior of this function is
+  /// unspecified.
 
   #[inline(always)]
   pub fn align_up_to_offset(self, align: usize) -> usize {
@@ -467,11 +472,11 @@ impl core::ops::SubAssign<usize> for ptr {
 }
 
 impl core::ops::Sub<ptr> for ptr {
-  type Output = isize;
+  type Output = usize;
 
   #[inline(always)]
-  fn sub(self, rhs: ptr) -> isize {
-    self.addr().wrapping_sub(rhs.addr()) as isize
+  fn sub(self, rhs: ptr) -> usize {
+    self.addr().wrapping_sub(rhs.addr())
   }
 }
 

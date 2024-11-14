@@ -1,21 +1,19 @@
-# `pop`
+# Plain Old Pointer
 
-... WRITEME ...
+A pointer type with nothing extra.
 
-Plain Old Pointers
-
-Pointers with nothing extra:
-
-- No pointee type information.
-- No mutability type information.
-- No type co- or contravariance.
+- No pointee type.
+- No mutability information.
+- No co- or contravariance.
 - No excluded auto traits.
 - No niches.
 - No undefined behavior when computing a derived pointer.
 - No pointer metadata.
 
+# Examples
+
+TODO
+
 # Rationale
 
-## Lack of Type Information
-
-## Wrapping Arithmetic
+TODO

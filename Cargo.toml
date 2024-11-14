@@ -1,10 +1,10 @@
 [package]
 authors = ["Aaron Pribadi <aaron.pribadi@gmail.com>"]
 categories = ["no-std", "rust-patterns"]
-description = "plain old pointers - a pointer type with no extras"
+description = "plain old pointer - a pointer type with nothing extra"
 edition = "2021"
 license = "Artistic-2.0"
-name = "plain-old-pointers"
+name = "plain-old-pointer"
 repository = "https://github.com/apribadi/pop"
 version = "1.0.0"
 
