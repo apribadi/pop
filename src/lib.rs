@@ -47,6 +47,103 @@ impl ptr {
     ptr(self.0.wrapping_add(addr.wrapping_sub(self.addr())))
   }
 
+  /// Given a pointer to the base of an array of `T`s, computes a pointer to
+  /// the element at the given index.
+
+  #[inline(always)]
+  pub const fn index<T>(self, i: usize) -> ptr {
+    ptr(self.0.wrapping_add(size_of::<T>().wrapping_mul(i)))
+  }
+
+  /// Whether the pointer is aligned appropriately for `T`.
+
+  #[inline(always)]
+  pub fn is_aligned<T>(self) -> bool {
+    self.addr() & align_of::<T>() - 1 == 0
+  }
+
+  /// For a given power of two `align`, determines whether the address of the
+  /// pointer is a multiple of `align`.
+  ///
+  /// If `align` is not a power of two, this has an unspecified behavior.
+
+  #[inline(always)]
+  pub fn is_aligned_to(self, align: usize) -> bool {
+    self.addr() & align - 1 == 0
+  }
+
+  /// Aligns a pointer downwards.
+
+  #[inline(always)]
+  pub fn align_down<T>(self) -> ptr {
+    self.with_addr(self.addr() & align_of::<T>().wrapping_neg())
+  }
+
+  /// The offset required to align a pointer downwards.
+  ///
+  /// `p.align_down::<T>() == p - p.align_down_offset::<T>()`
+
+  #[inline(always)]
+  pub fn align_down_offset<T>(self) -> usize {
+    self.addr() & align_of::<T>() - 1
+  }
+
+  /// Aligns a pointer downwards.
+  ///
+  /// If `align` is not a power of two, this has an unspecified behavior.
+
+  #[inline(always)]
+  pub fn align_down_to(self, align: usize) -> ptr {
+    self.with_addr(self.addr() & align.wrapping_neg())
+  }
+
+  /// The offset required to align a pointer downwards.
+  ///
+  /// `p.align_down_to(align) == p - p.align_down_to_offset(align)`
+  ///
+  /// If `align` is not a power of two, this has an unspecified behavior.
+
+  #[inline(always)]
+  pub fn align_down_to_offset(self, align: usize) -> usize {
+    self.addr() & align - 1
+  }
+
+  /// Aligns a pointer upwards.
+
+  #[inline(always)]
+  pub fn align_up<T>(self) -> ptr {
+    self.with_addr(self.addr() + align_of::<T>() - 1 & align_of::<T>().wrapping_neg())
+  }
+
+  /// The offset required to align a pointer upwards.
+  ///
+  /// `p.align_up::<T>() == p + p.align_up_offset::<T>()`
+
+  #[inline(always)]
+  pub fn align_up_offset<T>(self) -> usize {
+    self.addr().wrapping_neg() & align_of::<T>() - 1
+  }
+
+  /// Aligns a pointer upwards.
+  ///
+  /// If `align` is not a power of two, this has an unspecified behavior.
+
+  #[inline(always)]
+  pub fn align_up_to(self, align: usize) -> ptr {
+    self.with_addr(self.addr() + align - 1 & align.wrapping_neg())
+  }
+
+  /// The offset required to align a pointer upwards.
+  ///
+  /// `p.align_up_to(align) == p + p.align_up_to_offset(align)`
+  ///
+  /// If `align` is not a power of two, this has an unspecified behavior.
+
+  #[inline(always)]
+  pub fn align_up_to_offset(self, align: usize) -> usize {
+    self.addr().wrapping_neg() & align - 1
+  }
+
   /// Converts into a `*const T`.
 
   #[inline(always)]
@@ -139,14 +236,6 @@ impl ptr {
   #[inline(always)]
   pub const unsafe fn as_slice_non_null<T>(self, len: usize) -> core::ptr::NonNull<[T]> {
     core::ptr::NonNull::new_unchecked(core::ptr::slice_from_raw_parts(self.0 as _, len) as _)
-  }
-
-  /// Given a pointer to the base of an array of `T`s, computes a pointer to
-  /// the element at the given index.
-
-  #[inline(always)]
-  pub const fn index<T>(self, i: usize) -> ptr {
-    ptr(self.0.wrapping_add(size_of::<T>().wrapping_mul(i)))
   }
 
   /// Reads a value.

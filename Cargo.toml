@@ -1,11 +1,15 @@
 [package]
 authors = ["Aaron Pribadi <aaron.pribadi@gmail.com>"]
 categories = ["no-std", "rust-patterns"]
-description = "plain old pointers - a pointer with no extra type information"
+description = "plain old pointers - a pointer type with no extras"
 edition = "2021"
 license = "Artistic-2.0"
-name = "pop"
+name = "plain-old-pointers"
+repository = "https://github.com/apribadi/pop"
 version = "1.0.0"
+
+[lib]
+name = "pop"
 
 [lints.rust]
 elided_lifetimes_in_paths = "warn"
