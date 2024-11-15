@@ -47,14 +47,6 @@ impl ptr {
     ptr(self.0.wrapping_add(addr.wrapping_sub(self.addr())))
   }
 
-  /// Given a pointer to the base of an array of `T`s, computes a pointer to
-  /// the element at the given index.
-
-  #[inline(always)]
-  pub const fn index<T>(self, i: usize) -> ptr {
-    ptr(self.0.wrapping_add(size_of::<T>().wrapping_mul(i)))
-  }
-
   /// Whether the pointer is aligned appropriately for `T`.
 
   #[inline(always)]
@@ -82,7 +74,9 @@ impl ptr {
 
   /// The offset required to align a pointer downwards.
   ///
-  /// `p.align_down::<T>() == p - p.align_down_offset::<T>()`
+  /// ```text
+  /// p.align_down::<T>() == p - p.align_down_offset::<T>()
+  /// ```
 
   #[inline(always)]
   pub fn align_down_offset<T>(self) -> usize {
@@ -101,7 +95,9 @@ impl ptr {
 
   /// The offset required to align a pointer downwards.
   ///
-  /// `p.align_down_to(align) == p - p.align_down_to_offset(align)`
+  /// ```text
+  /// p.align_down_to(align) == p - p.align_down_to_offset(align)
+  /// ```
   ///
   /// If `align` is not a power of two, then the behavior of this function is
   /// unspecified.
@@ -115,12 +111,14 @@ impl ptr {
 
   #[inline(always)]
   pub fn align_up<T>(self) -> ptr {
-    self.with_addr(self.addr() + align_of::<T>() - 1 & align_of::<T>().wrapping_neg())
+    self.with_addr(self.addr().wrapping_add(align_of::<T>() - 1) & align_of::<T>().wrapping_neg())
   }
 
   /// The offset required to align a pointer upwards.
   ///
-  /// `p.align_up::<T>() == p + p.align_up_offset::<T>()`
+  /// ```text
+  /// p.align_up::<T>() == p + p.align_up_offset::<T>()
+  /// ```
 
   #[inline(always)]
   pub fn align_up_offset<T>(self) -> usize {
@@ -134,12 +132,14 @@ impl ptr {
 
   #[inline(always)]
   pub fn align_up_to(self, align: usize) -> ptr {
-    self.with_addr(self.addr() + align - 1 & align.wrapping_neg())
+    self.with_addr(self.addr().wrapping_add(align - 1) & align.wrapping_neg())
   }
 
   /// The offset required to align a pointer upwards.
   ///
-  /// `p.align_up_to(align) == p + p.align_up_to_offset(align)`
+  /// ```text
+  /// p.align_up_to(align) == p + p.align_up_to_offset(align)
+  /// ```
   ///
   /// If `align` is not a power of two, then the behavior of this function is
   /// unspecified.
@@ -247,7 +247,7 @@ impl ptr {
   ///
   /// # SAFETY
   ///
-  /// See `core::ptr::read`.
+  /// See [core::ptr::read].
 
   #[inline(always)]
   pub const unsafe fn read<T>(self) -> T {
@@ -258,7 +258,7 @@ impl ptr {
   ///
   /// # SAFETY
   ///
-  /// See `core::ptr::read_unaligned`.
+  /// See [core::ptr::read_unaligned].
 
   #[inline(always)]
   pub const unsafe fn read_unaligned<T>(self) -> T {
@@ -267,7 +267,7 @@ impl ptr {
 
   /// # SAFETY
   ///
-  /// See `core::ptr::read_volatile`.
+  /// See [core::ptr::read_volatile].
 
   #[inline(always)]
   pub unsafe fn read_volatile<T>(self) -> T {
@@ -278,7 +278,7 @@ impl ptr {
   ///
   /// # SAFETY
   ///
-  /// See `core::ptr::write`.
+  /// See [core::ptr::write].
 
   #[inline(always)]
   pub unsafe fn write<T>(self, value: T) {
@@ -289,7 +289,7 @@ impl ptr {
   ///
   /// # SAFETY
   ///
-  /// See `core::ptr::write_unaligned`.
+  /// See [core::ptr::write_unaligned].
 
   #[inline(always)]
   pub unsafe fn write_unaligned<T>(self, value: T) {
@@ -298,7 +298,7 @@ impl ptr {
 
   /// # SAFETY
   ///
-  /// See `core::ptr::write_volatile`.
+  /// See [core::ptr::write_volatile].
 
   #[inline(always)]
   pub unsafe fn write_volatile<T>(self, value: T) {
@@ -309,7 +309,7 @@ impl ptr {
   ///
   /// # SAFETY
   ///
-  /// See `core::ptr::replace`.
+  /// See [core::ptr::replace].
 
   #[inline(always)]
   pub unsafe fn replace<T>(self, value: T) -> T {
@@ -320,7 +320,7 @@ impl ptr {
   ///
   /// # SAFETY
   ///
-  /// See `core::ptr::drop_in_place`.
+  /// See [core::ptr::drop_in_place].
 
   #[inline(always)]
   pub unsafe fn drop_in_place<T: ?Sized>(self) {
@@ -331,7 +331,7 @@ impl ptr {
   ///
   /// # SAFETY
   ///
-  /// See `core::ptr::copy_nonoverlapping`.
+  /// See [core::ptr::copy_nonoverlapping].
 
   #[inline(always)]
   pub unsafe fn copy_nonoverlapping<T>(src: ptr, dst: ptr, count: usize) {
@@ -343,7 +343,7 @@ impl ptr {
   ///
   /// # SAFETY
   ///
-  /// See `core::ptr::swap_nonoverlapping`.
+  /// See [core::ptr::swap_nonoverlapping].
 
   #[inline(always)]
   pub unsafe fn swap_nonoverlapping<T>(x: ptr, y: ptr, count: usize) {
