@@ -47,6 +47,14 @@ impl ptr {
     ptr(self.0.wrapping_add(addr.wrapping_sub(self.addr())))
   }
 
+  /// Given a pointer to an array of `T`s, computes the pointer to the
+  /// `index`th element.
+
+  #[inline(always)]
+  pub fn index<T>(self, index: usize) -> ptr {
+    ptr(self.0.wrapping_add(index.wrapping_mul(size_of::<T>())))
+  }
+
   /// Whether the pointer is aligned appropriately for `T`.
 
   #[inline(always)]
