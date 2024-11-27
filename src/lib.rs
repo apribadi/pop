@@ -1,7 +1,7 @@
 #![doc = include_str!("../README.md")]
 #![no_std]
 
-/// A pointer type without extras.
+/// A pointer type without anything extra.
 
 #[derive(Clone, Copy, Eq, Hash, Ord, PartialEq, PartialOrd)]
 #[repr(transparent)]
@@ -55,6 +55,20 @@ impl ptr {
     ptr(self.0.wrapping_add(index.wrapping_mul(size_of::<T>())))
   }
 
+  /// Iterates over all of the elements of an array of `T`s.
+
+  #[inline(always)]
+  pub fn iter_array<T, const N: usize>(self) -> impl Iterator<Item = ptr> {
+    IterArray::<T>(self, N, core::marker::PhantomData)
+  }
+
+  /// Iterates over all of the elements of a slice of `T`s.
+
+  #[inline(always)]
+  pub fn iter_slice<T>(self, len: usize) -> impl Iterator<Item = ptr> {
+    IterArray::<T>(self, len, core::marker::PhantomData)
+  }
+
   /// Whether the pointer is aligned appropriately for `T`.
 
   #[inline(always)]
@@ -62,99 +76,18 @@ impl ptr {
     self.addr() & align_of::<T>() - 1 == 0
   }
 
-  /// For a given power of two `align`, determines whether the address of the
-  /// pointer is a multiple of `align`.
-  ///
-  /// If `align` is not a power of two, then the behavior of this function is
-  /// unspecified.
-
-  #[inline(always)]
-  pub fn is_aligned_to(self, align: usize) -> bool {
-    self.addr() & align - 1 == 0
-  }
-
-  /// Aligns a pointer downwards.
+  /// Aligns a pointer for `T` by possibly decreasing its address.
 
   #[inline(always)]
   pub fn align_down<T>(self) -> ptr {
     self.with_addr(self.addr() & align_of::<T>().wrapping_neg())
   }
 
-  /// The offset required to align a pointer downwards.
-  ///
-  /// ```text
-  /// p.align_down::<T>() == p - p.align_down_offset::<T>()
-  /// ```
-
-  #[inline(always)]
-  pub fn align_down_offset<T>(self) -> usize {
-    self.addr() & align_of::<T>() - 1
-  }
-
-  /// Aligns a pointer downwards.
-  ///
-  /// If `align` is not a power of two, then the behavior of this function is
-  /// unspecified.
-
-  #[inline(always)]
-  pub fn align_down_to(self, align: usize) -> ptr {
-    self.with_addr(self.addr() & align.wrapping_neg())
-  }
-
-  /// The offset required to align a pointer downwards.
-  ///
-  /// ```text
-  /// p.align_down_to(align) == p - p.align_down_to_offset(align)
-  /// ```
-  ///
-  /// If `align` is not a power of two, then the behavior of this function is
-  /// unspecified.
-
-  #[inline(always)]
-  pub fn align_down_to_offset(self, align: usize) -> usize {
-    self.addr() & align - 1
-  }
-
-  /// Aligns a pointer upwards.
+  /// Aligns a pointer for `T` by possibly increasing its address.
 
   #[inline(always)]
   pub fn align_up<T>(self) -> ptr {
     self.with_addr(self.addr().wrapping_add(align_of::<T>() - 1) & align_of::<T>().wrapping_neg())
-  }
-
-  /// The offset required to align a pointer upwards.
-  ///
-  /// ```text
-  /// p.align_up::<T>() == p + p.align_up_offset::<T>()
-  /// ```
-
-  #[inline(always)]
-  pub fn align_up_offset<T>(self) -> usize {
-    self.addr().wrapping_neg() & align_of::<T>() - 1
-  }
-
-  /// Aligns a pointer upwards.
-  ///
-  /// If `align` is not a power of two, then the behavior of this function is
-  /// unspecified.
-
-  #[inline(always)]
-  pub fn align_up_to(self, align: usize) -> ptr {
-    self.with_addr(self.addr().wrapping_add(align - 1) & align.wrapping_neg())
-  }
-
-  /// The offset required to align a pointer upwards.
-  ///
-  /// ```text
-  /// p.align_up_to(align) == p + p.align_up_to_offset(align)
-  /// ```
-  ///
-  /// If `align` is not a power of two, then the behavior of this function is
-  /// unspecified.
-
-  #[inline(always)]
-  pub fn align_up_to_offset(self, align: usize) -> usize {
-    self.addr().wrapping_neg() & align - 1
   }
 
   /// Converts into a `*const T`.
@@ -356,6 +289,24 @@ impl ptr {
   #[inline(always)]
   pub unsafe fn swap_nonoverlapping<T>(x: ptr, y: ptr, count: usize) {
     core::ptr::swap_nonoverlapping::<T>(x.0 as _, y.0 as _, count) ;
+  }
+}
+
+struct IterArray<T>(ptr, usize, core::marker::PhantomData<T>);
+
+impl<T> Iterator for IterArray<T> {
+  type Item = ptr;
+
+  #[inline(always)]
+  fn next(&mut self) -> Option<Self::Item> {
+    if self.1 == 0 {
+      None
+    } else {
+      let p = self.0;
+      self.0 = self.0 + size_of::<T>();
+      self.1 = self.1 - 1;
+      Some(p)
+    }
   }
 }
 
