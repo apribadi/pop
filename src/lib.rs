@@ -47,26 +47,12 @@ impl ptr {
     ptr(self.0.wrapping_add(addr.wrapping_sub(self.addr())))
   }
 
-  /// Given a pointer to an array of `T`s, computes the pointer to the
-  /// `index`th element.
+  /// Given a pointer to an array of `T`s, computes the pointer to the `i`th
+  /// element.
 
   #[inline(always)]
-  pub fn index<T>(self, index: usize) -> ptr {
-    ptr(self.0.wrapping_add(index.wrapping_mul(size_of::<T>())))
-  }
-
-  /// Iterates over all of the elements of an array of `T`s.
-
-  #[inline(always)]
-  pub fn iter_array<T, const N: usize>(self) -> impl Iterator<Item = ptr> {
-    IterArray::<T>(self, N, core::marker::PhantomData)
-  }
-
-  /// Iterates over all of the elements of a slice of `T`s.
-
-  #[inline(always)]
-  pub fn iter_slice<T>(self, len: usize) -> impl Iterator<Item = ptr> {
-    IterArray::<T>(self, len, core::marker::PhantomData)
+  pub fn index<T>(self, i: usize) -> ptr {
+    ptr(self.0.wrapping_add(i.wrapping_mul(size_of::<T>())))
   }
 
   /// Whether the pointer is aligned appropriately for `T`.
@@ -289,24 +275,6 @@ impl ptr {
   #[inline(always)]
   pub unsafe fn swap_nonoverlapping<T>(x: ptr, y: ptr, count: usize) {
     core::ptr::swap_nonoverlapping::<T>(x.0 as _, y.0 as _, count) ;
-  }
-}
-
-struct IterArray<T>(ptr, usize, core::marker::PhantomData<T>);
-
-impl<T> Iterator for IterArray<T> {
-  type Item = ptr;
-
-  #[inline(always)]
-  fn next(&mut self) -> Option<Self::Item> {
-    if self.1 == 0 {
-      None
-    } else {
-      let p = self.0;
-      self.0 = self.0 + size_of::<T>();
-      self.1 = self.1 - 1;
-      Some(p)
-    }
   }
 }
 
