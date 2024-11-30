@@ -62,20 +62,6 @@ impl ptr {
     self.addr() & align_of::<T>() - 1 == 0
   }
 
-  /// Aligns a pointer for `T` by possibly decreasing its address.
-
-  #[inline(always)]
-  pub fn align_down<T>(self) -> ptr {
-    self.with_addr(self.addr() & align_of::<T>().wrapping_neg())
-  }
-
-  /// Aligns a pointer for `T` by possibly increasing its address.
-
-  #[inline(always)]
-  pub fn align_up<T>(self) -> ptr {
-    self.with_addr(self.addr().wrapping_add(align_of::<T>() - 1) & align_of::<T>().wrapping_neg())
-  }
-
   /// Converts into a `*const T`.
 
   #[inline(always)]
@@ -177,8 +163,8 @@ impl ptr {
   /// See [core::ptr::read].
 
   #[inline(always)]
-  pub const unsafe fn read<T>(self) -> T {
-    core::ptr::read(self.0 as _)
+  pub const unsafe fn read<T>(x: ptr) -> T {
+    core::ptr::read(x.0 as _)
   }
 
   /// Reads a value without requiring alignment.
@@ -188,8 +174,8 @@ impl ptr {
   /// See [core::ptr::read_unaligned].
 
   #[inline(always)]
-  pub const unsafe fn read_unaligned<T>(self) -> T {
-    core::ptr::read_unaligned(self.0 as _)
+  pub const unsafe fn read_unaligned<T>(x: ptr) -> T {
+    core::ptr::read_unaligned(x.0 as _)
   }
 
   /// # SAFETY
@@ -197,8 +183,8 @@ impl ptr {
   /// See [core::ptr::read_volatile].
 
   #[inline(always)]
-  pub unsafe fn read_volatile<T>(self) -> T {
-    core::ptr::read_volatile(self.0 as _)
+  pub unsafe fn read_volatile<T>(x: ptr) -> T {
+    core::ptr::read_volatile(x.0 as _)
   }
 
   /// Writes a value.
@@ -208,8 +194,8 @@ impl ptr {
   /// See [core::ptr::write].
 
   #[inline(always)]
-  pub unsafe fn write<T>(self, value: T) {
-    core::ptr::write(self.0 as _, value)
+  pub unsafe fn write<T>(x: ptr, value: T) {
+    core::ptr::write(x.0 as _, value)
   }
 
   /// Writes a value without requiring alignment.
@@ -219,8 +205,8 @@ impl ptr {
   /// See [core::ptr::write_unaligned].
 
   #[inline(always)]
-  pub unsafe fn write_unaligned<T>(self, value: T) {
-    core::ptr::write_unaligned(self.0 as _, value)
+  pub unsafe fn write_unaligned<T>(x: ptr, value: T) {
+    core::ptr::write_unaligned(x.0 as _, value)
   }
 
   /// # SAFETY
@@ -228,8 +214,8 @@ impl ptr {
   /// See [core::ptr::write_volatile].
 
   #[inline(always)]
-  pub unsafe fn write_volatile<T>(self, value: T) {
-    core::ptr::write_volatile(self.0 as _, value)
+  pub unsafe fn write_volatile<T>(x: ptr, value: T) {
+    core::ptr::write_volatile(x.0 as _, value)
   }
 
   /// Reads a value and writes another value in its place.
@@ -239,8 +225,8 @@ impl ptr {
   /// See [core::ptr::replace].
 
   #[inline(always)]
-  pub unsafe fn replace<T>(self, value: T) -> T {
-    core::ptr::replace(self.0 as _, value)
+  pub unsafe fn replace<T>(x: ptr, value: T) -> T {
+    core::ptr::replace(x.0 as _, value)
   }
 
   /// Drops the pointed-to value.
@@ -250,8 +236,8 @@ impl ptr {
   /// See [core::ptr::drop_in_place].
 
   #[inline(always)]
-  pub unsafe fn drop_in_place<T: ?Sized>(self) {
-    core::ptr::drop_in_place(self.0 as _)
+  pub unsafe fn drop_in_place<T: ?Sized>(x: ptr) {
+    core::ptr::drop_in_place(x.0 as _)
   }
 
   /// Copies `count * size_of::<T>()` bytes from `src` to `dst`.
