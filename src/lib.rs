@@ -87,7 +87,7 @@ impl ptr {
 
   #[inline(always)]
   pub const fn as_slice_mut_ptr<T>(self, len: usize) -> *mut [T] {
-    core::ptr::slice_from_raw_parts(self.0 as _, len) as _
+    core::ptr::slice_from_raw_parts_mut(self.0 as _, len)
   }
 
   /// Converts into a `&T`.
@@ -108,7 +108,7 @@ impl ptr {
   /// The reference must be be valid for the lifetime.
 
   #[inline(always)]
-  pub unsafe fn as_mut_ref<'a, T>(self) -> &'a mut T {
+  pub const unsafe fn as_mut_ref<'a, T>(self) -> &'a mut T {
     &mut *(self.0 as *mut _)
   }
 
@@ -130,7 +130,7 @@ impl ptr {
   /// The reference must be be valid for the lifetime.
 
   #[inline(always)]
-  pub unsafe fn as_slice_mut_ref<'a, T>(self, len: usize) -> &'a mut [T] {
+  pub const unsafe fn as_slice_mut_ref<'a, T>(self, len: usize) -> &'a mut [T] {
     &mut *core::ptr::slice_from_raw_parts_mut(self.0 as _, len)
   }
 
@@ -194,7 +194,7 @@ impl ptr {
   /// See [core::ptr::write].
 
   #[inline(always)]
-  pub unsafe fn write<T>(x: ptr, value: T) {
+  pub const unsafe fn write<T>(x: ptr, value: T) {
     core::ptr::write(x.0 as _, value)
   }
 
@@ -205,7 +205,7 @@ impl ptr {
   /// See [core::ptr::write_unaligned].
 
   #[inline(always)]
-  pub unsafe fn write_unaligned<T>(x: ptr, value: T) {
+  pub const unsafe fn write_unaligned<T>(x: ptr, value: T) {
     core::ptr::write_unaligned(x.0 as _, value)
   }
 
@@ -216,17 +216,6 @@ impl ptr {
   #[inline(always)]
   pub unsafe fn write_volatile<T>(x: ptr, value: T) {
     core::ptr::write_volatile(x.0 as _, value)
-  }
-
-  /// Reads a value and writes another value in its place.
-  ///
-  /// # SAFETY
-  ///
-  /// See [core::ptr::replace].
-
-  #[inline(always)]
-  pub unsafe fn replace<T>(x: ptr, value: T) -> T {
-    core::ptr::replace(x.0 as _, value)
   }
 
   /// Drops the pointed-to value.
@@ -240,6 +229,17 @@ impl ptr {
     core::ptr::drop_in_place(x.0 as _)
   }
 
+  /// Reads a value and writes another value in its place.
+  ///
+  /// # SAFETY
+  ///
+  /// See [core::ptr::replace].
+
+  #[inline(always)]
+  pub const unsafe fn replace<T>(x: ptr, value: T) -> T {
+    core::ptr::replace(x.0 as _, value)
+  }
+
   /// Copies `count * size_of::<T>()` bytes from `src` to `dst`.
   ///
   /// # SAFETY
@@ -247,7 +247,7 @@ impl ptr {
   /// See [core::ptr::copy_nonoverlapping].
 
   #[inline(always)]
-  pub unsafe fn copy_nonoverlapping<T>(src: ptr, dst: ptr, count: usize) {
+  pub const unsafe fn copy_nonoverlapping<T>(src: ptr, dst: ptr, count: usize) {
     core::ptr::copy_nonoverlapping::<T>(src.0 as _, dst.0 as _, count) ;
   }
 
@@ -261,13 +261,6 @@ impl ptr {
   #[inline(always)]
   pub unsafe fn swap_nonoverlapping<T>(x: ptr, y: ptr, count: usize) {
     core::ptr::swap_nonoverlapping::<T>(x.0 as _, y.0 as _, count) ;
-  }
-}
-
-impl Default for ptr {
-  #[inline(always)]
-  fn default() -> ptr {
-    ptr::NULL
   }
 }
 
@@ -390,6 +383,13 @@ impl core::ops::Sub<ptr> for ptr {
   #[inline(always)]
   fn sub(self, rhs: ptr) -> usize {
     self.addr().wrapping_sub(rhs.addr())
+  }
+}
+
+impl Default for ptr {
+  #[inline(always)]
+  fn default() -> ptr {
+    ptr::NULL
   }
 }
 
