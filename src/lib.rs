@@ -27,31 +27,28 @@ impl ptr {
 
   #[inline(always)]
   pub const fn invalid(addr: usize) -> ptr {
-    ptr(unsafe { core::mem::transmute::<usize, *mut u8>(addr) })
+    ptr(core::ptr::without_provenance_mut(addr))
   }
 
   /// The address of the pointer.
 
   #[inline(always)]
   pub fn addr(self) -> usize {
-    // NB: This must NOT be `const`. Transmuting a pointer into an integer in a
-    // const context is undefined behavior.
-
-    unsafe { core::mem::transmute::<*mut u8, usize>(self.0) }
+    self.0.addr()
   }
 
   /// Changes the address of the pointer while keeping the provenance.
 
   #[inline(always)]
   pub fn with_addr(self, addr: usize) -> ptr {
-    ptr(self.0.wrapping_add(addr.wrapping_sub(self.addr())))
+    ptr(self.0.with_addr(addr))
   }
 
   /// Given a pointer to an array of `T`s, computes the pointer to the `i`th
   /// element.
 
   #[inline(always)]
-  pub fn index<T>(self, i: usize) -> ptr {
+  pub const fn index<T>(self, i: usize) -> ptr {
     ptr(self.0.wrapping_add(i.wrapping_mul(size_of::<T>())))
   }
 
