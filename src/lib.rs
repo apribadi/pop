@@ -245,7 +245,7 @@ impl ptr {
 
   #[inline(always)]
   pub const unsafe fn copy_nonoverlapping<T>(src: ptr, dst: ptr, count: usize) {
-    core::ptr::copy_nonoverlapping::<T>(src.0 as _, dst.0 as _, count) ;
+    core::ptr::copy_nonoverlapping::<T>(src.0 as _, dst.0 as _, count);
   }
 
   /// Swaps `count * size_of::<T>()` bytes between the regions pointed-to by
@@ -257,7 +257,18 @@ impl ptr {
 
   #[inline(always)]
   pub unsafe fn swap_nonoverlapping<T>(x: ptr, y: ptr, count: usize) {
-    core::ptr::swap_nonoverlapping::<T>(x.0 as _, y.0 as _, count) ;
+    core::ptr::swap_nonoverlapping::<T>(x.0 as _, y.0 as _, count);
+  }
+
+  /// Writes `count` zero bytes at `x`.
+  ///
+  /// # SAFETY
+  ///
+  /// It must be valid to write `count` bytes at `x`.
+
+  #[inline(always)]
+  pub unsafe fn fill_zero(x: ptr, count: usize) {
+    core::ptr::write_bytes(x.0, 0u8, count);
   }
 }
 
