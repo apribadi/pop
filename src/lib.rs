@@ -5,18 +5,18 @@
 
 #[derive(Clone, Copy, Eq, Hash, Ord, PartialEq, PartialOrd)]
 #[repr(transparent)]
-pub struct Ptr(*mut u8);
+pub struct ptr(*mut u8);
 
-unsafe impl Send for Ptr {
+unsafe impl Send for ptr {
 }
 
-unsafe impl Sync for Ptr {
+unsafe impl Sync for ptr {
 }
 
-impl Ptr {
+impl ptr {
   /// A pointer with address zero and no provenance.
 
-  pub const NULL: Ptr = Ptr::invalid(0);
+  pub const NULL: ptr = ptr::invalid(0);
 
   /// Whether the pointer's address is zero.
 
@@ -28,8 +28,8 @@ impl Ptr {
   /// Creates a pointer with the given address and no provenance.
 
   #[inline(always)]
-  pub const fn invalid(addr: usize) -> Ptr {
-    return Ptr(core::ptr::without_provenance_mut(addr));
+  pub const fn invalid(addr: usize) -> ptr {
+    return ptr(core::ptr::without_provenance_mut(addr));
   }
 
   /// The address of the pointer.
@@ -42,16 +42,16 @@ impl Ptr {
   /// Changes the address of the pointer while keeping the provenance.
 
   #[inline(always)]
-  pub fn with_addr(self, addr: usize) -> Ptr {
-    return Ptr(self.0.with_addr(addr));
+  pub fn with_addr(self, addr: usize) -> ptr {
+    return ptr(self.0.with_addr(addr));
   }
 
   /// Given a pointer to an array of `T`s, computes the pointer to the `i`th
   /// element.
 
   #[inline(always)]
-  pub const fn index<T>(self, i: usize) -> Ptr {
-    return Ptr(self.0.wrapping_add(i.wrapping_mul(size_of::<T>())));
+  pub const fn index<T>(self, i: usize) -> ptr {
+    return ptr(self.0.wrapping_add(i.wrapping_mul(size_of::<T>())));
   }
 
   /// Whether the pointer is aligned appropriately for `T`.
@@ -162,7 +162,7 @@ impl Ptr {
   /// See [core::ptr::read].
 
   #[inline(always)]
-  pub const unsafe fn read<T>(x: Ptr) -> T {
+  pub const unsafe fn read<T>(x: ptr) -> T {
     return unsafe { core::ptr::read(x.0 as _) };
   }
 
@@ -173,7 +173,7 @@ impl Ptr {
   /// See [core::ptr::read_unaligned].
 
   #[inline(always)]
-  pub const unsafe fn read_unaligned<T>(x: Ptr) -> T {
+  pub const unsafe fn read_unaligned<T>(x: ptr) -> T {
     return unsafe { core::ptr::read_unaligned(x.0 as _) };
   }
 
@@ -182,7 +182,7 @@ impl Ptr {
   /// See [core::ptr::read_volatile].
 
   #[inline(always)]
-  pub unsafe fn read_volatile<T>(x: Ptr) -> T {
+  pub unsafe fn read_volatile<T>(x: ptr) -> T {
     return unsafe { core::ptr::read_volatile(x.0 as _) };
   }
 
@@ -193,7 +193,7 @@ impl Ptr {
   /// See [core::ptr::write].
 
   #[inline(always)]
-  pub const unsafe fn write<T>(x: Ptr, value: T) {
+  pub const unsafe fn write<T>(x: ptr, value: T) {
     unsafe { core::ptr::write(x.0 as _, value) };
   }
 
@@ -204,7 +204,7 @@ impl Ptr {
   /// See [core::ptr::write_unaligned].
 
   #[inline(always)]
-  pub const unsafe fn write_unaligned<T>(x: Ptr, value: T) {
+  pub const unsafe fn write_unaligned<T>(x: ptr, value: T) {
     unsafe { core::ptr::write_unaligned(x.0 as _, value) };
   }
 
@@ -213,7 +213,7 @@ impl Ptr {
   /// See [core::ptr::write_volatile].
 
   #[inline(always)]
-  pub unsafe fn write_volatile<T>(x: Ptr, value: T) {
+  pub unsafe fn write_volatile<T>(x: ptr, value: T) {
     unsafe { core::ptr::write_volatile(x.0 as _, value) };
   }
 
@@ -224,7 +224,7 @@ impl Ptr {
   /// See [core::ptr::drop_in_place].
 
   #[inline(always)]
-  pub unsafe fn drop_in_place<T: ?Sized>(x: Ptr) {
+  pub unsafe fn drop_in_place<T: ?Sized>(x: ptr) {
     unsafe { core::ptr::drop_in_place(x.0 as _) };
   }
 
@@ -235,7 +235,7 @@ impl Ptr {
   /// See [core::ptr::replace].
 
   #[inline(always)]
-  pub const unsafe fn replace<T>(x: Ptr, value: T) -> T {
+  pub const unsafe fn replace<T>(x: ptr, value: T) -> T {
     return unsafe { core::ptr::replace(x.0 as _, value) };
   }
 
@@ -246,7 +246,7 @@ impl Ptr {
   /// See [core::ptr::copy_nonoverlapping].
 
   #[inline(always)]
-  pub const unsafe fn copy_nonoverlapping<T>(src: Ptr, dst: Ptr, count: usize) {
+  pub const unsafe fn copy_nonoverlapping<T>(src: ptr, dst: ptr, count: usize) {
     unsafe { core::ptr::copy_nonoverlapping::<T>(src.0 as _, dst.0 as _, count) };
   }
 
@@ -258,7 +258,7 @@ impl Ptr {
   /// See [core::ptr::swap_nonoverlapping].
 
   #[inline(always)]
-  pub unsafe fn swap_nonoverlapping<T>(x: Ptr, y: Ptr, count: usize) {
+  pub unsafe fn swap_nonoverlapping<T>(x: ptr, y: ptr, count: usize) {
     unsafe { core::ptr::swap_nonoverlapping::<T>(x.0 as _, y.0 as _, count) };
   }
 
@@ -269,148 +269,148 @@ impl Ptr {
   /// It must be valid to write `count` bytes at `x`.
 
   #[inline(always)]
-  pub unsafe fn fill_zero(x: Ptr, count: usize) {
+  pub unsafe fn fill_zero(x: ptr, count: usize) {
     unsafe { core::ptr::write_bytes(x.0, 0u8, count) };
   }
 }
 
-impl<T: ?Sized> From<*const T> for Ptr {
+impl<T: ?Sized> From<*const T> for ptr {
   #[inline(always)]
-  fn from(value: *const T) -> Ptr {
-    return Ptr(value as _);
+  fn from(value: *const T) -> ptr {
+    return ptr(value as _);
   }
 }
 
-impl<T: ?Sized> From<*mut T> for Ptr {
+impl<T: ?Sized> From<*mut T> for ptr {
   #[inline(always)]
-  fn from(value: *mut T) -> Ptr {
-    return Ptr(value as _);
+  fn from(value: *mut T) -> ptr {
+    return ptr(value as _);
   }
 }
 
-impl<T: ?Sized> From<&T> for Ptr {
+impl<T: ?Sized> From<&T> for ptr {
   #[inline(always)]
-  fn from(value: &T) -> Ptr {
-    return Ptr(value as *const _ as _);
+  fn from(value: &T) -> ptr {
+    return ptr(value as *const _ as _);
   }
 }
 
-impl<T: ?Sized> From<&mut T> for Ptr {
+impl<T: ?Sized> From<&mut T> for ptr {
   #[inline(always)]
-  fn from(value: &mut T) -> Ptr {
-    return Ptr(value as *mut _ as _);
+  fn from(value: &mut T) -> ptr {
+    return ptr(value as *mut _ as _);
   }
 }
 
-impl<T: ?Sized> From<core::ptr::NonNull<T>> for Ptr {
+impl<T: ?Sized> From<core::ptr::NonNull<T>> for ptr {
   #[inline(always)]
-  fn from(value: core::ptr::NonNull<T>) -> Ptr {
-    return Ptr(value.as_ptr() as _);
+  fn from(value: core::ptr::NonNull<T>) -> ptr {
+    return ptr(value.as_ptr() as _);
   }
 }
 
-impl<T> From<Ptr> for *const T {
+impl<T> From<ptr> for *const T {
   #[inline(always)]
-  fn from(value: Ptr) -> *const T {
+  fn from(value: ptr) -> *const T {
     return value.0 as _;
   }
 }
 
-impl<T> From<Ptr> for *mut T {
+impl<T> From<ptr> for *mut T {
   #[inline(always)]
-  fn from(value: Ptr) -> *mut T {
+  fn from(value: ptr) -> *mut T {
     return value.0 as _;
   }
 }
 
-impl core::ops::Add<isize> for Ptr {
-  type Output = Ptr;
+impl core::ops::Add<isize> for ptr {
+  type Output = ptr;
 
   #[inline(always)]
-  fn add(self, rhs: isize) -> Ptr {
-    return Ptr(self.0.wrapping_offset(rhs));
+  fn add(self, rhs: isize) -> ptr {
+    return ptr(self.0.wrapping_offset(rhs));
   }
 }
 
-impl core::ops::AddAssign<isize> for Ptr {
+impl core::ops::AddAssign<isize> for ptr {
   #[inline(always)]
   fn add_assign(&mut self, rhs: isize) {
     *self = *self + rhs;
   }
 }
 
-impl core::ops::Add<usize> for Ptr {
-  type Output = Ptr;
+impl core::ops::Add<usize> for ptr {
+  type Output = ptr;
 
   #[inline(always)]
-  fn add(self, rhs: usize) -> Ptr {
-    return Ptr(self.0.wrapping_add(rhs));
+  fn add(self, rhs: usize) -> ptr {
+    return ptr(self.0.wrapping_add(rhs));
   }
 }
 
-impl core::ops::AddAssign<usize> for Ptr {
+impl core::ops::AddAssign<usize> for ptr {
   #[inline(always)]
   fn add_assign(&mut self, rhs: usize) {
     *self = *self + rhs;
   }
 }
 
-impl core::ops::Sub<isize> for Ptr {
-  type Output = Ptr;
+impl core::ops::Sub<isize> for ptr {
+  type Output = ptr;
 
   #[inline(always)]
-  fn sub(self, rhs: isize) -> Ptr {
-    return Ptr(self.0.wrapping_offset(rhs.wrapping_neg()));
+  fn sub(self, rhs: isize) -> ptr {
+    return ptr(self.0.wrapping_offset(rhs.wrapping_neg()));
   }
 }
 
-impl core::ops::SubAssign<isize> for Ptr {
+impl core::ops::SubAssign<isize> for ptr {
   #[inline(always)]
   fn sub_assign(&mut self, rhs: isize) {
     *self = *self - rhs;
   }
 }
 
-impl core::ops::Sub<usize> for Ptr {
-  type Output = Ptr;
+impl core::ops::Sub<usize> for ptr {
+  type Output = ptr;
 
   #[inline(always)]
-  fn sub(self, rhs: usize) -> Ptr {
-    return Ptr(self.0.wrapping_sub(rhs));
+  fn sub(self, rhs: usize) -> ptr {
+    return ptr(self.0.wrapping_sub(rhs));
   }
 }
 
-impl core::ops::SubAssign<usize> for Ptr {
+impl core::ops::SubAssign<usize> for ptr {
   #[inline(always)]
   fn sub_assign(&mut self, rhs: usize) {
     *self = *self - rhs;
   }
 }
 
-impl core::ops::Sub<Ptr> for Ptr {
+impl core::ops::Sub<ptr> for ptr {
   type Output = usize;
 
   #[inline(always)]
-  fn sub(self, rhs: Ptr) -> usize {
+  fn sub(self, rhs: ptr) -> usize {
     return self.addr().wrapping_sub(rhs.addr());
   }
 }
 
-impl Default for Ptr {
+impl Default for ptr {
   #[inline(always)]
-  fn default() -> Ptr {
-    return Ptr::NULL;
+  fn default() -> ptr {
+    return ptr::NULL;
   }
 }
 
-impl core::fmt::Pointer for Ptr {
+impl core::fmt::Pointer for ptr {
   fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
     return <*const u8 as core::fmt::Pointer>::fmt(&(self.0 as _), f);
   }
 }
 
-impl core::fmt::Debug for Ptr {
+impl core::fmt::Debug for ptr {
   fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-    return <Ptr as core::fmt::Pointer>::fmt(self, f);
+    return <ptr as core::fmt::Pointer>::fmt(self, f);
   }
 }
