@@ -255,74 +255,6 @@ impl ptr {
   pub unsafe fn write_bytes<T>(self, value: u8, count: usize) {
     unsafe { core::ptr::write_bytes::<T>(self.0 as _, value, count) };
   }
-
-  /// Copies `count * size_of::<T>()` bytes from `src` to `dst`. The source
-  /// and destination regions must not overlap.
-  ///
-  /// # SAFETY
-  ///
-  /// See [core::ptr::copy_nonoverlapping].
-
-  #[inline(always)]
-  pub const unsafe fn copy_nonoverlapping<T>(src: ptr, dst: ptr, count: usize) {
-    unsafe { core::ptr::copy_nonoverlapping::<T>(src.0 as _, dst.0 as _, count) };
-  }
-
-  /// Swaps `count * size_of::<T>()` bytes between the regions pointed-to by
-  /// `x` and `y`.
-  ///
-  /// # SAFETY
-  ///
-  /// See [core::ptr::swap_nonoverlapping].
-
-  #[inline(always)]
-  pub unsafe fn swap_nonoverlapping<T>(x: ptr, y: ptr, count: usize) {
-    unsafe { core::ptr::swap_nonoverlapping::<T>(x.0 as _, y.0 as _, count) };
-  }
-
-  /// Allocates memory with the global allocator.
-  ///
-  /// # SAFETY
-  ///
-  /// See [alloc::alloc::GlobalAlloc::alloc].
-
-  #[cfg(feature = "alloc")]
-  pub unsafe fn alloc(layout: core::alloc::Layout) -> ptr {
-    return ptr::from(unsafe { alloc::alloc::alloc(layout) });
-  }
-
-  /// Allocates zero-initialized memory with the global allocator.
-  ///
-  /// # SAFETY
-  ///
-  /// See [alloc::alloc::GlobalAlloc::alloc_zeroed].
-
-  #[cfg(feature = "alloc")]
-  pub unsafe fn alloc_zeroed(layout: core::alloc::Layout) -> ptr {
-    return ptr::from(unsafe { alloc::alloc::alloc_zeroed(layout) });
-  }
-
-  /// Deallocates memory with the global allocator.
-  ///
-  /// # SAFETY
-  ///
-  /// See [alloc::alloc::GlobalAlloc::dealloc].
-
-  #[cfg(feature = "alloc")]
-  pub unsafe fn dealloc(x: ptr, layout: core::alloc::Layout) {
-    return unsafe { alloc::alloc::dealloc(x.as_mut_ptr(), layout) };
-  }
-
-  /// Reallocates memory with the global allocator.
-  ///
-  /// # SAFETY
-  ///
-  /// See [alloc::alloc::GlobalAlloc::realloc].
-
-  #[cfg(feature = "alloc")]
-  pub unsafe fn realloc(x: ptr, layout: core::alloc::Layout, new_size: usize) -> ptr {
-    return ptr::from(unsafe { alloc::alloc::realloc(x.as_mut_ptr(), layout, new_size) });
-  }
 }
 
 impl<T: ?Sized> From<*const T> for ptr {
@@ -464,4 +396,72 @@ impl core::fmt::Debug for ptr {
   fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
     return <ptr as core::fmt::Pointer>::fmt(self, f);
   }
+}
+
+/// Copies `count * size_of::<T>()` bytes from `src` to `dst`. The source
+/// and destination regions must not overlap.
+///
+/// # SAFETY
+///
+/// See [core::ptr::copy_nonoverlapping].
+
+#[inline(always)]
+pub const unsafe fn copy_nonoverlapping<T>(src: ptr, dst: ptr, count: usize) {
+  unsafe { core::ptr::copy_nonoverlapping::<T>(src.0 as _, dst.0 as _, count) };
+}
+
+/// Swaps `count * size_of::<T>()` bytes between the regions pointed-to by
+/// `x` and `y`.
+///
+/// # SAFETY
+///
+/// See [core::ptr::swap_nonoverlapping].
+
+#[inline(always)]
+pub unsafe fn swap_nonoverlapping<T>(x: ptr, y: ptr, count: usize) {
+  unsafe { core::ptr::swap_nonoverlapping::<T>(x.0 as _, y.0 as _, count) };
+}
+
+/// Allocates memory with the global allocator.
+///
+/// # SAFETY
+///
+/// See [alloc::alloc::GlobalAlloc::alloc].
+
+#[cfg(feature = "alloc")]
+pub unsafe fn alloc(layout: core::alloc::Layout) -> ptr {
+  return ptr::from(unsafe { alloc::alloc::alloc(layout) });
+}
+
+/// Allocates zero-initialized memory with the global allocator.
+///
+/// # SAFETY
+///
+/// See [alloc::alloc::GlobalAlloc::alloc_zeroed].
+
+#[cfg(feature = "alloc")]
+pub unsafe fn alloc_zeroed(layout: core::alloc::Layout) -> ptr {
+  return ptr::from(unsafe { alloc::alloc::alloc_zeroed(layout) });
+}
+
+/// Deallocates memory with the global allocator.
+///
+/// # SAFETY
+///
+/// See [alloc::alloc::GlobalAlloc::dealloc].
+
+#[cfg(feature = "alloc")]
+pub unsafe fn dealloc(x: ptr, layout: core::alloc::Layout) {
+  return unsafe { alloc::alloc::dealloc(x.as_mut_ptr(), layout) };
+}
+
+/// Reallocates memory with the global allocator.
+///
+/// # SAFETY
+///
+/// See [alloc::alloc::GlobalAlloc::realloc].
+
+#[cfg(feature = "alloc")]
+pub unsafe fn realloc(x: ptr, layout: core::alloc::Layout, new_size: usize) -> ptr {
+  return ptr::from(unsafe { alloc::alloc::realloc(x.as_mut_ptr(), layout, new_size) });
 }
