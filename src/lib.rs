@@ -222,6 +222,17 @@ impl ptr {
     unsafe { core::ptr::write_volatile(self.0 as _, value) };
   }
 
+  /// Replaces the value at `self` with `value`, returning the old value.
+  ///
+  /// # SAFETY
+  ///
+  /// See [core::ptr::replace].
+
+  #[inline(always)]
+  pub const unsafe fn replace<T>(self, value: T) -> T {
+    return unsafe { core::ptr::replace(self.0 as _, value) };
+  }
+
   /// Drops the pointed-to value.
   ///
   /// # SAFETY
