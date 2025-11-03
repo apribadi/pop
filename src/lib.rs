@@ -1,6 +1,8 @@
 #![doc = include_str!("../README.md")]
 #![no_std]
 
+use core::ptr::NonNull;
+
 /// A pointer type without anything extra.
 
 #[derive(Clone, Copy, Eq, Hash, Ord, PartialEq, PartialOrd)]
@@ -140,8 +142,8 @@ impl ptr {
   /// The pointer must not have address zero.
 
   #[inline(always)]
-  pub const unsafe fn as_non_null<T>(self) -> core::ptr::NonNull<T> {
-    return unsafe { core::ptr::NonNull::new_unchecked(self.0 as _) };
+  pub const unsafe fn as_non_null<T>(self) -> NonNull<T> {
+    return unsafe { NonNull::new_unchecked(self.0 as _) };
   }
 
   /// Converts into a `NonNull<[T]>`.
@@ -151,8 +153,8 @@ impl ptr {
   /// The pointer must not have address zero.
 
   #[inline(always)]
-  pub const unsafe fn as_slice_non_null<T>(self, len: usize) -> core::ptr::NonNull<[T]> {
-    return unsafe { core::ptr::NonNull::new_unchecked(core::ptr::slice_from_raw_parts(self.0 as _, len) as _) };
+  pub const unsafe fn as_slice_non_null<T>(self, len: usize) -> NonNull<[T]> {
+    return unsafe { NonNull::new_unchecked(core::ptr::slice_from_raw_parts(self.0 as _, len) as _) };
   }
 
   /// Reads a value.
@@ -162,8 +164,8 @@ impl ptr {
   /// See [core::ptr::read].
 
   #[inline(always)]
-  pub const unsafe fn read<T>(x: ptr) -> T {
-    return unsafe { core::ptr::read(x.0 as _) };
+  pub const unsafe fn read<T>(self) -> T {
+    return unsafe { core::ptr::read(self.0 as _) };
   }
 
   /// Reads a value without requiring alignment.
@@ -173,8 +175,8 @@ impl ptr {
   /// See [core::ptr::read_unaligned].
 
   #[inline(always)]
-  pub const unsafe fn read_unaligned<T>(x: ptr) -> T {
-    return unsafe { core::ptr::read_unaligned(x.0 as _) };
+  pub const unsafe fn read_unaligned<T>(self) -> T {
+    return unsafe { core::ptr::read_unaligned(self.0 as _) };
   }
 
   /// # SAFETY
@@ -182,8 +184,8 @@ impl ptr {
   /// See [core::ptr::read_volatile].
 
   #[inline(always)]
-  pub unsafe fn read_volatile<T>(x: ptr) -> T {
-    return unsafe { core::ptr::read_volatile(x.0 as _) };
+  pub unsafe fn read_volatile<T>(self) -> T {
+    return unsafe { core::ptr::read_volatile(self.0 as _) };
   }
 
   /// Writes a value.
@@ -193,8 +195,8 @@ impl ptr {
   /// See [core::ptr::write].
 
   #[inline(always)]
-  pub const unsafe fn write<T>(x: ptr, value: T) {
-    unsafe { core::ptr::write(x.0 as _, value) };
+  pub const unsafe fn write<T>(self, value: T) {
+    unsafe { core::ptr::write(self.0 as _, value) };
   }
 
   /// Writes a value without requiring alignment.
@@ -204,8 +206,8 @@ impl ptr {
   /// See [core::ptr::write_unaligned].
 
   #[inline(always)]
-  pub const unsafe fn write_unaligned<T>(x: ptr, value: T) {
-    unsafe { core::ptr::write_unaligned(x.0 as _, value) };
+  pub const unsafe fn write_unaligned<T>(self, value: T) {
+    unsafe { core::ptr::write_unaligned(self.0 as _, value) };
   }
 
   /// # SAFETY
@@ -213,8 +215,8 @@ impl ptr {
   /// See [core::ptr::write_volatile].
 
   #[inline(always)]
-  pub unsafe fn write_volatile<T>(x: ptr, value: T) {
-    unsafe { core::ptr::write_volatile(x.0 as _, value) };
+  pub unsafe fn write_volatile<T>(self, value: T) {
+    unsafe { core::ptr::write_volatile(self.0 as _, value) };
   }
 
   /// Drops the pointed-to value.
@@ -224,22 +226,35 @@ impl ptr {
   /// See [core::ptr::drop_in_place].
 
   #[inline(always)]
-  pub unsafe fn drop_in_place<T: ?Sized>(x: ptr) {
-    unsafe { core::ptr::drop_in_place(x.0 as _) };
+  pub unsafe fn drop_in_place<T: ?Sized>(self) {
+    unsafe { core::ptr::drop_in_place(self.0 as _) };
   }
 
-  /// Reads a value and writes another value in its place.
+  /// Copies `count * size_of::<T>()` bytes from `src` to `self`. The source
+  /// and destination regions must not overlap.
   ///
   /// # SAFETY
   ///
-  /// See [core::ptr::replace].
+  /// See [core::ptr::copy_nonoverlapping].
 
   #[inline(always)]
-  pub const unsafe fn replace<T>(x: ptr, value: T) -> T {
-    return unsafe { core::ptr::replace(x.0 as _, value) };
+  pub const unsafe fn copy_from_nonoverlapping<T>(self, src: ptr, count: usize) {
+    unsafe { core::ptr::copy_nonoverlapping::<T>(src.0 as _, self.0 as _, count) };
   }
 
-  /// Copies `count * size_of::<T>()` bytes from `src` to `dst`.
+  /// Writes `count * size_of::<T>()` copies of byte `value` at `x`.
+  ///
+  /// # SAFETY
+  ///
+  /// See [core::ptr::write_bytes].
+
+  #[inline(always)]
+  pub unsafe fn write_bytes<T>(self, value: u8, count: usize) {
+    unsafe { core::ptr::write_bytes::<T>(self.0 as _, value, count) };
+  }
+
+  /// Copies `count * size_of::<T>()` bytes from `src` to `dst`. The source
+  /// and destination regions must not overlap.
   ///
   /// # SAFETY
   ///
@@ -260,17 +275,6 @@ impl ptr {
   #[inline(always)]
   pub unsafe fn swap_nonoverlapping<T>(x: ptr, y: ptr, count: usize) {
     unsafe { core::ptr::swap_nonoverlapping::<T>(x.0 as _, y.0 as _, count) };
-  }
-
-  /// Writes `count` zero bytes at `x`.
-  ///
-  /// # SAFETY
-  ///
-  /// It must be valid to write `count` bytes at `x`.
-
-  #[inline(always)]
-  pub unsafe fn fill_zero(x: ptr, count: usize) {
-    unsafe { core::ptr::write_bytes(x.0, 0u8, count) };
   }
 }
 
@@ -302,9 +306,9 @@ impl<T: ?Sized> From<&mut T> for ptr {
   }
 }
 
-impl<T: ?Sized> From<core::ptr::NonNull<T>> for ptr {
+impl<T: ?Sized> From<NonNull<T>> for ptr {
   #[inline(always)]
-  fn from(value: core::ptr::NonNull<T>) -> ptr {
+  fn from(value: NonNull<T>) -> ptr {
     return ptr(value.as_ptr() as _);
   }
 }
