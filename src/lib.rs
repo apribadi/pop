@@ -1,6 +1,9 @@
 #![doc = include_str!("../README.md")]
 #![no_std]
 
+#[cfg(feature = "alloc")]
+extern crate alloc;
+
 use core::ptr::NonNull;
 
 /// A pointer type without anything extra.
@@ -275,6 +278,50 @@ impl ptr {
   #[inline(always)]
   pub unsafe fn swap_nonoverlapping<T>(x: ptr, y: ptr, count: usize) {
     unsafe { core::ptr::swap_nonoverlapping::<T>(x.0 as _, y.0 as _, count) };
+  }
+
+  /// Allocates memory with the global allocator.
+  ///
+  /// # SAFETY
+  ///
+  /// See [alloc::alloc::GlobalAlloc::alloc].
+
+  #[cfg(feature = "alloc")]
+  pub unsafe fn alloc(layout: core::alloc::Layout) -> ptr {
+    return ptr::from(unsafe { alloc::alloc::alloc(layout) });
+  }
+
+  /// Allocates zero-initialized memory with the global allocator.
+  ///
+  /// # SAFETY
+  ///
+  /// See [alloc::alloc::GlobalAlloc::alloc_zeroed].
+
+  #[cfg(feature = "alloc")]
+  pub unsafe fn alloc_zeroed(layout: core::alloc::Layout) -> ptr {
+    return ptr::from(unsafe { alloc::alloc::alloc_zeroed(layout) });
+  }
+
+  /// Deallocates memory with the global allocator.
+  ///
+  /// # SAFETY
+  ///
+  /// See [alloc::alloc::GlobalAlloc::dealloc].
+
+  #[cfg(feature = "alloc")]
+  pub unsafe fn dealloc(x: ptr, layout: core::alloc::Layout) {
+    return unsafe { alloc::alloc::dealloc(x.as_mut_ptr(), layout) };
+  }
+
+  /// Reallocates memory with the global allocator.
+  ///
+  /// # SAFETY
+  ///
+  /// See [alloc::alloc::GlobalAlloc::realloc].
+
+  #[cfg(feature = "alloc")]
+  pub unsafe fn realloc(x: ptr, layout: core::alloc::Layout, new_size: usize) -> ptr {
+    return ptr::from(unsafe { alloc::alloc::realloc(x.as_mut_ptr(), layout, new_size) });
   }
 }
 

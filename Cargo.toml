@@ -9,8 +9,15 @@ name = "plain-old-pointer"
 repository = "https://github.com/apribadi/pop"
 version = "0.1.0"
 
+[package.metadata.docs.rs]
+all-features = true
+
 [lib]
 name = "pop"
+
+[features]
+alloc = []
+default = ["alloc"]
 
 [lints.rust]
 elided_lifetimes_in_paths = "warn"
