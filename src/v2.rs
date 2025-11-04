@@ -272,52 +272,52 @@ impl<T> ptr<T> {
   }
 }
 
-impl<T, U: ?Sized> From<*const U> for ptr<T> {
+impl<T> From<*const T> for ptr<T> {
   #[inline(always)]
-  fn from(value: *const U) -> ptr<T> {
+  fn from(value: *const T) -> ptr<T> {
     return ptr(value as _, PhantomData);
   }
 }
 
-impl<T, U: ?Sized> From<*mut U> for ptr<T> {
+impl<T> From<*mut T> for ptr<T> {
   #[inline(always)]
-  fn from(value: *mut U) -> ptr<T> {
+  fn from(value: *mut T) -> ptr<T> {
     return ptr(value as _, PhantomData);
   }
 }
 
-impl<T, U: ?Sized> From<&U> for ptr<T> {
+impl<T> From<&T> for ptr<T> {
   #[inline(always)]
-  fn from(value: &U) -> ptr<T> {
-    return ptr(value as *const U as _, PhantomData);
+  fn from(value: &T) -> ptr<T> {
+    return ptr(value as *const T as _, PhantomData);
   }
 }
 
-impl<T, U: ?Sized> From<&mut U> for ptr<T> {
+impl<T> From<&mut T> for ptr<T> {
   #[inline(always)]
-  fn from(value: &mut U) -> ptr<T> {
-    return ptr(value as *mut U as _, PhantomData);
+  fn from(value: &mut T) -> ptr<T> {
+    return ptr(value as *mut T as _, PhantomData);
   }
 }
 
-impl<T, U: ?Sized> From<NonNull<U>> for ptr<T> {
+impl<T> From<NonNull<T>> for ptr<T> {
   #[inline(always)]
-  fn from(value: NonNull<U>) -> ptr<T> {
+  fn from(value: NonNull<T>) -> ptr<T> {
     return ptr(value.as_ptr() as _, PhantomData);
   }
 }
 
-impl<T, U> From<ptr<T>> for *const U {
+impl<T> From<ptr<T>> for *const T {
   #[inline(always)]
-  fn from(value: ptr<T>) -> *const U {
-    return value.0 as *const U;
+  fn from(value: ptr<T>) -> *const T {
+    return value.0 as *const T;
   }
 }
 
-impl<T, U> From<ptr<T>> for *mut U {
+impl<T> From<ptr<T>> for *mut T {
   #[inline(always)]
-  fn from(value: ptr<T>) -> *mut U {
-    return value.0 as *mut U;
+  fn from(value: ptr<T>) -> *mut T {
+    return value.0 as *mut T;
   }
 }
 
@@ -330,13 +330,6 @@ impl<T> core::ops::Add<isize> for ptr<T> {
   }
 }
 
-impl<T> core::ops::AddAssign<isize> for ptr<T> {
-  #[inline(always)]
-  fn add_assign(&mut self, rhs: isize) {
-    *self = *self + rhs;
-  }
-}
-
 impl<T> core::ops::Add<usize> for ptr<T> {
   type Output = ptr<T>;
 
@@ -346,10 +339,39 @@ impl<T> core::ops::Add<usize> for ptr<T> {
   }
 }
 
-impl<T> core::ops::AddAssign<usize> for ptr<T> {
+impl<T> core::ops::Add<i32> for ptr<T> {
+  type Output = ptr<T>;
+
   #[inline(always)]
-  fn add_assign(&mut self, rhs: usize) {
-    *self = *self + rhs;
+  fn add(self, rhs: i32) -> ptr<T> {
+    return self + rhs as isize;
+  }
+}
+
+impl<T> core::ops::Add<u32> for ptr<T> {
+  type Output = ptr<T>;
+
+  #[inline(always)]
+  fn add(self, rhs: u32) -> ptr<T> {
+    return self + rhs as usize;
+  }
+}
+
+impl<T> core::ops::Add<i64> for ptr<T> {
+  type Output = ptr<T>;
+
+  #[inline(always)]
+  fn add(self, rhs: i64) -> ptr<T> {
+    return self + rhs as isize;
+  }
+}
+
+impl<T> core::ops::Add<u64> for ptr<T> {
+  type Output = ptr<T>;
+
+  #[inline(always)]
+  fn add(self, rhs: u64) -> ptr<T> {
+    return self + rhs as usize;
   }
 }
 
@@ -362,19 +384,106 @@ impl<T> core::ops::Sub<isize> for ptr<T> {
   }
 }
 
-impl<T> core::ops::SubAssign<isize> for ptr<T> {
-  #[inline(always)]
-  fn sub_assign(&mut self, rhs: isize) {
-    *self = *self - rhs;
-  }
-}
-
 impl<T> core::ops::Sub<usize> for ptr<T> {
   type Output = ptr<T>;
 
   #[inline(always)]
   fn sub(self, rhs: usize) -> ptr<T> {
     return ptr((self.0 as *mut T).wrapping_sub(rhs) as _, PhantomData);
+  }
+}
+
+impl<T> core::ops::Sub<i32> for ptr<T> {
+  type Output = ptr<T>;
+
+  #[inline(always)]
+  fn sub(self, rhs: i32) -> ptr<T> {
+    return self - rhs as isize;
+  }
+}
+
+impl<T> core::ops::Sub<u32> for ptr<T> {
+  type Output = ptr<T>;
+
+  #[inline(always)]
+  fn sub(self, rhs: u32) -> ptr<T> {
+    return self - rhs as usize;
+  }
+}
+
+impl<T> core::ops::Sub<i64> for ptr<T> {
+  type Output = ptr<T>;
+
+  #[inline(always)]
+  fn sub(self, rhs: i64) -> ptr<T> {
+    return self - rhs as isize;
+  }
+}
+
+impl<T> core::ops::Sub<u64> for ptr<T> {
+  type Output = ptr<T>;
+
+  #[inline(always)]
+  fn sub(self, rhs: u64) -> ptr<T> {
+    return self - rhs as usize;
+  }
+}
+
+impl<T> core::ops::Sub<ptr<T>> for ptr<T> {
+  type Output = usize;
+
+  #[inline(always)]
+  fn sub(self, rhs: ptr<T>) -> usize {
+    return self.addr().wrapping_sub(rhs.addr()) / size_of::<T>();
+  }
+}
+
+impl<T> core::ops::AddAssign<isize> for ptr<T> {
+  #[inline(always)]
+  fn add_assign(&mut self, rhs: isize) {
+    *self = *self + rhs;
+  }
+}
+
+impl<T> core::ops::AddAssign<usize> for ptr<T> {
+  #[inline(always)]
+  fn add_assign(&mut self, rhs: usize) {
+    *self = *self + rhs;
+  }
+}
+
+impl<T> core::ops::AddAssign<i32> for ptr<T> {
+  #[inline(always)]
+  fn add_assign(&mut self, rhs: i32) {
+    *self = *self + rhs;
+  }
+}
+
+impl<T> core::ops::AddAssign<u32> for ptr<T> {
+  #[inline(always)]
+  fn add_assign(&mut self, rhs: u32) {
+    *self = *self + rhs;
+  }
+}
+
+impl<T> core::ops::AddAssign<i64> for ptr<T> {
+  #[inline(always)]
+  fn add_assign(&mut self, rhs: i64) {
+    *self = *self + rhs;
+  }
+}
+
+impl<T> core::ops::AddAssign<u64> for ptr<T> {
+  #[inline(always)]
+  fn add_assign(&mut self, rhs: u64) {
+    *self = *self + rhs;
+  }
+}
+
+impl<T> core::ops::SubAssign<isize> for ptr<T> {
+  #[inline(always)]
+  fn sub_assign(&mut self, rhs: isize) {
+    *self = *self - rhs;
   }
 }
 
@@ -385,12 +494,31 @@ impl<T> core::ops::SubAssign<usize> for ptr<T> {
   }
 }
 
-impl<T> core::ops::Sub<ptr<T>> for ptr<T> {
-  type Output = usize;
-
+impl<T> core::ops::SubAssign<i32> for ptr<T> {
   #[inline(always)]
-  fn sub(self, rhs: ptr<T>) -> usize {
-    return self.addr().wrapping_sub(rhs.addr()) / size_of::<T>();
+  fn sub_assign(&mut self, rhs: i32) {
+    *self = *self - rhs;
+  }
+}
+
+impl<T> core::ops::SubAssign<u32> for ptr<T> {
+  #[inline(always)]
+  fn sub_assign(&mut self, rhs: u32) {
+    *self = *self - rhs;
+  }
+}
+
+impl<T> core::ops::SubAssign<i64> for ptr<T> {
+  #[inline(always)]
+  fn sub_assign(&mut self, rhs: i64) {
+    *self = *self - rhs;
+  }
+}
+
+impl<T> core::ops::SubAssign<u64> for ptr<T> {
+  #[inline(always)]
+  fn sub_assign(&mut self, rhs: u64) {
+    *self = *self - rhs;
   }
 }
 
