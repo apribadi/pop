@@ -362,6 +362,41 @@ impl<T> From<NonNull<T>> for ptr<T> {
   }
 }
 
+impl<T> From<*const [T]> for ptr<T> {
+  #[inline(always)]
+  fn from(value: *const [T]) -> ptr<T> {
+    return ptr(value as _, PhantomData);
+  }
+}
+
+impl<T> From<*mut [T]> for ptr<T> {
+  #[inline(always)]
+  fn from(value: *mut [T]) -> ptr<T> {
+    return ptr(value as _, PhantomData);
+  }
+}
+
+impl<T> From<&[T]> for ptr<T> {
+  #[inline(always)]
+  fn from(value: &[T]) -> ptr<T> {
+    return ptr(value as *const [T] as _, PhantomData);
+  }
+}
+
+impl<T> From<&mut [T]> for ptr<T> {
+  #[inline(always)]
+  fn from(value: &mut [T]) -> ptr<T> {
+    return ptr(value as *mut [T] as _, PhantomData);
+  }
+}
+
+impl<T> From<NonNull<[T]>> for ptr<T> {
+  #[inline(always)]
+  fn from(value: NonNull<[T]>) -> ptr<T> {
+    return ptr(value.as_ptr() as _, PhantomData);
+  }
+}
+
 impl<T> From<ptr<T>> for *const T {
   #[inline(always)]
   fn from(value: ptr<T>) -> *const T {
