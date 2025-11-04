@@ -3,7 +3,6 @@ use core::ptr::NonNull;
 
 /// TODO
 
-#[derive(Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct ptr<T>(*mut u8, PhantomData<fn(T) -> T>);
 
 impl<T> Clone for ptr<T> {
@@ -14,6 +13,62 @@ impl<T> Clone for ptr<T> {
 }
 
 impl<T> Copy for ptr<T> {
+}
+
+impl<T> Eq for ptr<T> {
+}
+
+impl<T> core::hash::Hash for ptr<T> {
+  #[inline(always)]
+  fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
+    self.0.hash(state);
+  }
+}
+
+impl<T> Ord for ptr<T> {
+  #[inline(always)]
+  fn cmp(&self, other: &Self) -> core::cmp::Ordering {
+    return self.0.cmp(&other.0);
+  }
+}
+
+impl<T> PartialEq for ptr<T> {
+  #[inline(always)]
+  fn eq(&self, other: &Self) -> bool {
+    return self.0 == other.0;
+  }
+
+  #[inline(always)]
+  fn ne(&self, other: &Self) -> bool {
+    return self.0 != other.0;
+  }
+}
+
+impl<T> PartialOrd for ptr<T> {
+  #[inline(always)]
+  fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
+    return self.0.partial_cmp(&other.0);
+  }
+
+  #[inline(always)]
+  fn lt(&self, other: &Self) -> bool {
+    return self.0 < other.0;
+  }
+
+  #[inline(always)]
+  fn le(&self, other: &Self) -> bool {
+    return self.0 <= other.0;
+  }
+
+  #[inline(always)]
+  fn gt(&self, other: &Self) -> bool {
+    return self.0 > other.0;
+  }
+
+  #[inline(always)]
+  fn ge(&self, other: &Self) -> bool {
+    return self.0 >= other.0;
+  }
 }
 
 unsafe impl<T> Send for ptr<T> {
