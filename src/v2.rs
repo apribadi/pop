@@ -3,8 +3,18 @@ use core::ptr::NonNull;
 
 /// TODO
 
-#[derive(Clone, Copy, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[derive(Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct ptr<T>(*mut u8, PhantomData<fn(T) -> T>);
+
+impl<T> Clone for ptr<T> {
+  #[inline(always)]
+  fn clone(&self) -> Self {
+    return *self;
+  }
+}
+
+impl<T> Copy for ptr<T> {
+}
 
 unsafe impl<T> Send for ptr<T> {
 }
@@ -13,13 +23,6 @@ unsafe impl<T> Sync for ptr<T> {
 }
 
 impl<T> ptr<T> {
-  /// Whether the pointer's address is zero.
-
-  #[inline(always)]
-  pub fn is_null(self) -> bool {
-    return self.addr() == 0;
-  }
-
   /// Creates a pointer with the given address and no provenance.
 
   #[inline(always)]
@@ -31,6 +34,13 @@ impl<T> ptr<T> {
 
   pub const fn null() -> ptr<T> {
     return ptr::invalid(0);
+  }
+
+  /// Whether the pointer's address is zero.
+
+  #[inline(always)]
+  pub fn is_null(self) -> bool {
+    return self.addr() == 0;
   }
 
   /// Casts the pointer to a different type.
@@ -235,8 +245,6 @@ impl<T> ptr<T> {
 
   #[inline(always)]
   pub unsafe fn drop_in_place(self) {
-    // WARNING! It is necessary to cast the pointer to `*mut T` so that we
-    // invoke the correct drop function.
     unsafe { core::ptr::drop_in_place(self.0 as *mut T) };
   }
 
@@ -312,97 +320,96 @@ impl<T, U> From<ptr<T>> for *mut U {
     return value.0 as *mut U;
   }
 }
-/*
 
-impl core::ops::Add<isize> for ptr {
-  type Output = ptr;
+impl<T> core::ops::Add<isize> for ptr<T> {
+  type Output = ptr<T>;
 
   #[inline(always)]
-  fn add(self, rhs: isize) -> ptr {
-    return ptr(self.0.wrapping_offset(rhs));
+  fn add(self, rhs: isize) -> ptr<T> {
+    return ptr((self.0 as *mut T).wrapping_offset(rhs) as _, PhantomData);
   }
 }
 
-impl core::ops::AddAssign<isize> for ptr {
+impl<T> core::ops::AddAssign<isize> for ptr<T> {
   #[inline(always)]
   fn add_assign(&mut self, rhs: isize) {
     *self = *self + rhs;
   }
 }
 
-impl core::ops::Add<usize> for ptr {
-  type Output = ptr;
+impl<T> core::ops::Add<usize> for ptr<T> {
+  type Output = ptr<T>;
 
   #[inline(always)]
-  fn add(self, rhs: usize) -> ptr {
-    return ptr(self.0.wrapping_add(rhs));
+  fn add(self, rhs: usize) -> ptr<T> {
+    return ptr((self.0 as *mut T).wrapping_add(rhs) as _, PhantomData);
   }
 }
 
-impl core::ops::AddAssign<usize> for ptr {
+impl<T> core::ops::AddAssign<usize> for ptr<T> {
   #[inline(always)]
   fn add_assign(&mut self, rhs: usize) {
     *self = *self + rhs;
   }
 }
 
-impl core::ops::Sub<isize> for ptr {
-  type Output = ptr;
+impl<T> core::ops::Sub<isize> for ptr<T> {
+  type Output = ptr<T>;
 
   #[inline(always)]
-  fn sub(self, rhs: isize) -> ptr {
-    return ptr(self.0.wrapping_offset(rhs.wrapping_neg()));
+  fn sub(self, rhs: isize) -> ptr<T> {
+    return ptr((self.0 as *mut T).wrapping_offset(rhs.wrapping_neg()) as _, PhantomData);
   }
 }
 
-impl core::ops::SubAssign<isize> for ptr {
+impl<T> core::ops::SubAssign<isize> for ptr<T> {
   #[inline(always)]
   fn sub_assign(&mut self, rhs: isize) {
     *self = *self - rhs;
   }
 }
 
-impl core::ops::Sub<usize> for ptr {
-  type Output = ptr;
+impl<T> core::ops::Sub<usize> for ptr<T> {
+  type Output = ptr<T>;
 
   #[inline(always)]
-  fn sub(self, rhs: usize) -> ptr {
-    return ptr(self.0.wrapping_sub(rhs));
+  fn sub(self, rhs: usize) -> ptr<T> {
+    return ptr((self.0 as *mut T).wrapping_sub(rhs) as _, PhantomData);
   }
 }
 
-impl core::ops::SubAssign<usize> for ptr {
+impl<T> core::ops::SubAssign<usize> for ptr<T> {
   #[inline(always)]
   fn sub_assign(&mut self, rhs: usize) {
     *self = *self - rhs;
   }
 }
 
-impl core::ops::Sub<ptr> for ptr {
+impl<T> core::ops::Sub<ptr<T>> for ptr<T> {
   type Output = usize;
 
   #[inline(always)]
-  fn sub(self, rhs: ptr) -> usize {
-    return self.addr().wrapping_sub(rhs.addr());
+  fn sub(self, rhs: ptr<T>) -> usize {
+    return self.addr().wrapping_sub(rhs.addr()) / size_of::<T>();
   }
 }
 
-impl Default for ptr {
+impl<T> Default for ptr<T> {
   #[inline(always)]
-  fn default() -> ptr {
-    return ptr::NULL;
+  fn default() -> ptr<T> {
+    return ptr::null();
   }
 }
 
-impl core::fmt::Pointer for ptr {
+impl<T> core::fmt::Pointer for ptr<T> {
   fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-    return <*const u8 as core::fmt::Pointer>::fmt(&(self.0 as _), f);
+    return <*const u8 as core::fmt::Pointer>::fmt(&(self.0 as *const u8), f);
   }
 }
 
-impl core::fmt::Debug for ptr {
+impl<T> core::fmt::Debug for ptr<T> {
   fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-    return <ptr as core::fmt::Pointer>::fmt(self, f);
+    return <ptr<T> as core::fmt::Pointer>::fmt(self, f);
   }
 }
 
@@ -414,8 +421,8 @@ impl core::fmt::Debug for ptr {
 /// See [core::ptr::copy_nonoverlapping].
 
 #[inline(always)]
-pub const unsafe fn copy_nonoverlapping<T>(src: ptr, dst: ptr, count: usize) {
-  unsafe { core::ptr::copy_nonoverlapping::<T>(src.0 as _, dst.0 as _, count) };
+pub const unsafe fn copy_nonoverlapping<T>(src: ptr<T>, dst: ptr<T>, count: usize) {
+  unsafe { core::ptr::copy_nonoverlapping(src.0 as *const T, dst.0 as *mut T, count) };
 }
 
 /// Swaps `count * size_of::<T>()` bytes between the regions pointed-to by
@@ -426,7 +433,6 @@ pub const unsafe fn copy_nonoverlapping<T>(src: ptr, dst: ptr, count: usize) {
 /// See [core::ptr::swap_nonoverlapping].
 
 #[inline(always)]
-pub unsafe fn swap_nonoverlapping<T>(x: ptr, y: ptr, count: usize) {
-  unsafe { core::ptr::swap_nonoverlapping::<T>(x.0 as _, y.0 as _, count) };
+pub unsafe fn swap_nonoverlapping<T>(x: ptr<T>, y: ptr<T>, count: usize) {
+  unsafe { core::ptr::swap_nonoverlapping(x.0 as *mut T, y.0 as *mut T, count) };
 }
-*/
