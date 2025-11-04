@@ -51,12 +51,18 @@ impl ptr {
     return ptr(self.0.with_addr(addr));
   }
 
-  /// Given a pointer to an array of `T`s, computes the pointer to the `i`th
-  /// element.
+  /// TODO
 
   #[inline(always)]
-  pub const fn index<T>(self, i: usize) -> ptr {
+  pub const fn add<T>(self, i: usize) -> ptr {
     return ptr(self.0.wrapping_add(i.wrapping_mul(size_of::<T>())));
+  }
+
+  /// TODO
+
+  #[inline(always)]
+  pub const fn sub<T>(self, i: usize) -> ptr {
+    return ptr(self.0.wrapping_sub(i.wrapping_mul(size_of::<T>())));
   }
 
   /// Whether the pointer is aligned appropriately for `T`.
