@@ -682,8 +682,9 @@ pub mod global {
   ///
   /// See [alloc::alloc::GlobalAlloc::alloc].
 
-  pub unsafe fn alloc(layout: Layout) -> Result<ptr<u8>, Never> {
-    let x = ptr::from(unsafe { alloc::alloc::alloc(layout) });
+  pub unsafe fn alloc<T>(layout: Layout) -> Result<ptr<T>, Never> {
+    let x = unsafe { alloc::alloc::alloc(layout) };
+    let x = ptr::from(x).cast();
 
     if x.is_null() {
       match alloc::alloc::handle_alloc_error(layout) {
@@ -701,8 +702,9 @@ pub mod global {
   ///
   /// See [alloc::alloc::GlobalAlloc::alloc_zeroed].
 
-  pub unsafe fn alloc_zeroed(layout: Layout) -> Result<ptr<u8>, Never> {
-    let x = ptr::from(unsafe { alloc::alloc::alloc_zeroed(layout) });
+  pub unsafe fn alloc_zeroed<T>(layout: Layout) -> Result<ptr<T>, Never> {
+    let x = unsafe { alloc::alloc::alloc_zeroed(layout) };
+    let x = ptr::from(x).cast();
 
     if x.is_null() {
       match alloc::alloc::handle_alloc_error(layout) {
@@ -718,8 +720,8 @@ pub mod global {
   ///
   /// See [alloc::alloc::GlobalAlloc::dealloc].
 
-  pub unsafe fn dealloc(x: ptr<u8>, layout: Layout) {
-    unsafe { alloc::alloc::dealloc(x.as_mut_ptr(), layout) };
+  pub unsafe fn dealloc<T>(x: ptr<T>, layout: Layout) {
+    unsafe { alloc::alloc::dealloc(x.cast().as_mut_ptr(), layout) };
   }
 
   /// Reallocates memory with the global allocator.
@@ -728,8 +730,9 @@ pub mod global {
   ///
   /// See [alloc::alloc::GlobalAlloc::realloc].
 
-  pub unsafe fn realloc(x: ptr<u8>, layout: Layout, new_size: usize) -> Result<ptr<u8>, Never> {
-    let x = ptr::from(unsafe { alloc::alloc::realloc(x.as_mut_ptr(), layout, new_size) });
+  pub unsafe fn realloc<T>(x: ptr<T>, layout: Layout, new_size: usize) -> Result<ptr<T>, Never> {
+    let x = unsafe { alloc::alloc::realloc(x.cast().as_mut_ptr(), layout, new_size) };
+    let x = ptr::from(x).cast();
 
     if x.is_null() {
       match alloc::alloc::handle_alloc_error(layout) {
