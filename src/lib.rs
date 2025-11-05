@@ -1,9 +1,6 @@
 #![doc = include_str!("../README.md")]
 #![no_std]
 
-#[cfg(feature = "alloc")]
-extern crate alloc;
-
 use core::marker::PhantomData;
 use core::ptr::NonNull;
 
@@ -93,6 +90,7 @@ impl<T> ptr<T> {
 
   /// Creates a pointer with address zero and no provenance.
 
+  #[inline(always)]
   pub const fn null() -> ptr<T> {
     return ptr::invalid(0);
   }
@@ -106,6 +104,7 @@ impl<T> ptr<T> {
 
   /// Casts the pointer to a different type.
 
+  #[inline(always)]
   pub const fn cast<U>(self) -> ptr<U> {
     return ptr(self.0, PhantomData);
   }
@@ -328,7 +327,7 @@ impl<T> ptr<T> {
   /// See [core::ptr::write_bytes].
 
   #[inline(always)]
-  pub unsafe fn write_bytes(self, value: u8, count: usize) {
+  pub const unsafe fn write_bytes(self, value: u8, count: usize) {
     unsafe { core::ptr::write_bytes(self.0 as *mut T, value, count) };
   }
 }
@@ -627,13 +626,13 @@ impl<T> Default for ptr<T> {
 
 impl<T> core::fmt::Pointer for ptr<T> {
   fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-    return <*const u8 as core::fmt::Pointer>::fmt(&(self.0 as *const u8), f);
+    return <*mut u8 as core::fmt::Pointer>::fmt(&self.0, f);
   }
 }
 
 impl<T> core::fmt::Debug for ptr<T> {
   fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-    return <ptr<T> as core::fmt::Pointer>::fmt(self, f);
+    return <*mut u8 as core::fmt::Pointer>::fmt(&self.0, f);
   }
 }
 
@@ -657,81 +656,86 @@ pub const unsafe fn copy_nonoverlapping<T>(src: ptr<T>, dst: ptr<T>, count: usiz
 /// See [core::ptr::swap_nonoverlapping].
 
 #[inline(always)]
-pub unsafe fn swap_nonoverlapping<T>(x: ptr<T>, y: ptr<T>, count: usize) {
+pub const unsafe fn swap_nonoverlapping<T>(x: ptr<T>, y: ptr<T>, count: usize) {
   unsafe { core::ptr::swap_nonoverlapping(x.0 as *mut T, y.0 as *mut T, count) };
 }
 
-/// Polyfill for `never_type`.
-
 #[cfg(feature = "alloc")]
-pub enum Never {
-}
+pub mod global {
+  //! TODO
 
-/// Allocates memory with the global allocator.
-///
-/// On failure, calls [`alloc::alloc::handle_alloc_error`] and does not return.
-///
-/// # SAFETY
-///
-/// See [alloc::alloc::GlobalAlloc::alloc].
+  extern crate alloc;
 
-#[cfg(feature = "alloc")]
-pub unsafe fn alloc(layout: core::alloc::Layout) -> Result<ptr<u8>, Never> {
-  let x = ptr::from(unsafe { alloc::alloc::alloc(layout) });
+  use core::alloc::Layout;
+  use super::ptr;
 
-  if x.is_null() {
-    match alloc::alloc::handle_alloc_error(layout) {
-    }
+  /// Polyfill for `never_type`.
+
+  pub enum Never {
   }
 
-  Ok(x)
-}
+  /// Allocates memory with the global allocator.
+  ///
+  /// On failure, calls [`alloc::alloc::handle_alloc_error`] and does not return.
+  ///
+  /// # SAFETY
+  ///
+  /// See [alloc::alloc::GlobalAlloc::alloc].
 
-/// Allocates zero-initialized memory with the global allocator.
-///
-/// On failure, calls [`alloc::alloc::handle_alloc_error`] and does not return.
-///
-/// # SAFETY
-///
-/// See [alloc::alloc::GlobalAlloc::alloc_zeroed].
+  pub unsafe fn alloc(layout: Layout) -> Result<ptr<u8>, Never> {
+    let x = ptr::from(unsafe { alloc::alloc::alloc(layout) });
 
-#[cfg(feature = "alloc")]
-pub unsafe fn alloc_zeroed(layout: core::alloc::Layout) -> Result<ptr<u8>, Never> {
-  let x = ptr::from(unsafe { alloc::alloc::alloc_zeroed(layout) });
-
-  if x.is_null() {
-    match alloc::alloc::handle_alloc_error(layout) {
+    if x.is_null() {
+      match alloc::alloc::handle_alloc_error(layout) {
+      }
     }
+
+    return Ok(x);
   }
 
-  Ok(x)
-}
+  /// Allocates zero-initialized memory with the global allocator.
+  ///
+  /// On failure, calls [`alloc::alloc::handle_alloc_error`] and does not return.
+  ///
+  /// # SAFETY
+  ///
+  /// See [alloc::alloc::GlobalAlloc::alloc_zeroed].
 
-/// Deallocates memory with the global allocator.
-///
-/// # SAFETY
-///
-/// See [alloc::alloc::GlobalAlloc::dealloc].
+  pub unsafe fn alloc_zeroed(layout: Layout) -> Result<ptr<u8>, Never> {
+    let x = ptr::from(unsafe { alloc::alloc::alloc_zeroed(layout) });
 
-#[cfg(feature = "alloc")]
-pub unsafe fn dealloc(x: ptr<u8>, layout: core::alloc::Layout) {
-  return unsafe { alloc::alloc::dealloc(x.as_mut_ptr(), layout) };
-}
-
-/// Reallocates memory with the global allocator.
-///
-/// # SAFETY
-///
-/// See [alloc::alloc::GlobalAlloc::realloc].
-
-#[cfg(feature = "alloc")]
-pub unsafe fn realloc(x: ptr<u8>, layout: core::alloc::Layout, new_size: usize) -> Result<ptr<u8>, Never> {
-  let x = ptr::from(unsafe { alloc::alloc::realloc(x.as_mut_ptr(), layout, new_size) });
-
-  if x.is_null() {
-    match alloc::alloc::handle_alloc_error(layout) {
+    if x.is_null() {
+      match alloc::alloc::handle_alloc_error(layout) {
+      }
     }
+
+    return Ok(x);
   }
 
-  Ok(x)
+  /// Deallocates memory with the global allocator.
+  ///
+  /// # SAFETY
+  ///
+  /// See [alloc::alloc::GlobalAlloc::dealloc].
+
+  pub unsafe fn dealloc(x: ptr<u8>, layout: Layout) {
+    unsafe { alloc::alloc::dealloc(x.as_mut_ptr(), layout) };
+  }
+
+  /// Reallocates memory with the global allocator.
+  ///
+  /// # SAFETY
+  ///
+  /// See [alloc::alloc::GlobalAlloc::realloc].
+
+  pub unsafe fn realloc(x: ptr<u8>, layout: Layout, new_size: usize) -> Result<ptr<u8>, Never> {
+    let x = ptr::from(unsafe { alloc::alloc::realloc(x.as_mut_ptr(), layout, new_size) });
+
+    if x.is_null() {
+      match alloc::alloc::handle_alloc_error(layout) {
+      }
+    }
+
+    return Ok(x);
+  }
 }
