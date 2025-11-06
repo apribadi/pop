@@ -6,6 +6,7 @@ use core::ptr::NonNull;
 
 /// TODO
 
+#[allow(non_camel_case_types)]
 pub struct ptr<T>(*mut u8, PhantomData<fn(T) -> T>);
 
 impl<T> Clone for ptr<T> {
