@@ -350,7 +350,7 @@ impl<T> ptr<T> {
   /// See [core::ptr::swap_nonoverlapping].
 
   #[inline(always)]
-  pub const unsafe fn swap_nonoverlapping<T>(self, with: ptr<T>, count: usize) {
+  pub const unsafe fn swap_nonoverlapping(self, with: ptr<T>, count: usize) {
     unsafe { core::ptr::swap_nonoverlapping(self.0 as *mut T, with.0 as *mut T, count) };
   }
 
