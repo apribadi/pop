@@ -131,6 +131,27 @@ impl<T> ptr<T> {
     return self.addr() & align_of::<T>() - 1 == 0;
   }
 
+  /// TODO
+
+  #[inline(always)]
+  pub fn byte_add<U>(self, n: usize) -> ptr<U> {
+    return ptr(self.0.wrapping_add(n) as _, PhantomData);
+  }
+
+  /// TODO
+
+  #[inline(always)]
+  pub fn byte_sub<U>(self, n: usize) -> ptr<U> {
+    return ptr(self.0.wrapping_sub(n) as _, PhantomData);
+  }
+
+  /// TODO
+
+  #[inline(always)]
+  pub fn byte_diff<U>(self, from: ptr<U>) -> usize {
+    return self.addr().wrapping_sub(from.addr());
+  }
+
   /// Converts into a `*const T`.
 
   #[inline(always)]
@@ -319,6 +340,18 @@ impl<T> ptr<T> {
   #[inline(always)]
   pub const unsafe fn copy_from_nonoverlapping(self, src: ptr<T>, count: usize) {
     unsafe { core::ptr::copy_nonoverlapping(src.0 as *const T, self.0 as *mut T, count) };
+  }
+
+  /// Swaps `count * size_of::<T>()` bytes between the regions pointed-to by
+  /// `self` and `with`.
+  ///
+  /// # SAFETY
+  ///
+  /// See [core::ptr::swap_nonoverlapping].
+
+  #[inline(always)]
+  pub const unsafe fn swap_nonoverlapping<T>(self, with: ptr<T>, count: usize) {
+    unsafe { core::ptr::swap_nonoverlapping(self.0 as *mut T, with.0 as *mut T, count) };
   }
 
   /// Writes `count * size_of::<T>()` copies of byte `value` at `x`.
@@ -635,30 +668,6 @@ impl<T> core::fmt::Debug for ptr<T> {
   fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
     return <*mut u8 as core::fmt::Pointer>::fmt(&self.0, f);
   }
-}
-
-/// Copies `count * size_of::<T>()` bytes from `src` to `dst`. The source
-/// and destination regions must not overlap.
-///
-/// # SAFETY
-///
-/// See [core::ptr::copy_nonoverlapping].
-
-#[inline(always)]
-pub const unsafe fn copy_nonoverlapping<T>(src: ptr<T>, dst: ptr<T>, count: usize) {
-  unsafe { core::ptr::copy_nonoverlapping(src.0 as *const T, dst.0 as *mut T, count) };
-}
-
-/// Swaps `count * size_of::<T>()` bytes between the regions pointed-to by
-/// `x` and `y`.
-///
-/// # SAFETY
-///
-/// See [core::ptr::swap_nonoverlapping].
-
-#[inline(always)]
-pub const unsafe fn swap_nonoverlapping<T>(x: ptr<T>, y: ptr<T>, count: usize) {
-  unsafe { core::ptr::swap_nonoverlapping(x.0 as *mut T, y.0 as *mut T, count) };
 }
 
 #[cfg(feature = "alloc")]
