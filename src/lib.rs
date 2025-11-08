@@ -7,7 +7,14 @@ use core::ptr::NonNull;
 /// TODO
 
 #[allow(non_camel_case_types)]
+#[repr(transparent)]
 pub struct ptr<T>(*mut u8, PhantomData<fn(T) -> T>);
+
+unsafe impl<T> Send for ptr<T> {
+}
+
+unsafe impl<T> Sync for ptr<T> {
+}
 
 impl<T> Clone for ptr<T> {
   #[inline(always)]
@@ -73,12 +80,6 @@ impl<T> PartialOrd for ptr<T> {
   fn ge(&self, other: &Self) -> bool {
     return self.0 >= other.0;
   }
-}
-
-unsafe impl<T> Send for ptr<T> {
-}
-
-unsafe impl<T> Sync for ptr<T> {
 }
 
 impl<T> ptr<T> {
@@ -182,7 +183,7 @@ impl<T> ptr<T> {
 
   /// Converts into a `&T`.
   ///
-  /// SAFETY
+  /// # SAFETY
   ///
   /// The reference must be be valid for the lifetime.
 
@@ -193,7 +194,7 @@ impl<T> ptr<T> {
 
   /// Converts into a `&mut T`.
   ///
-  /// SAFETY
+  /// # SAFETY
   ///
   /// The reference must be be valid for the lifetime.
 
@@ -204,7 +205,7 @@ impl<T> ptr<T> {
 
   /// Converts into a `&[T]`.
   ///
-  /// SAFETY
+  /// # SAFETY
   ///
   /// The reference must be be valid for the lifetime.
 
@@ -215,7 +216,7 @@ impl<T> ptr<T> {
 
   /// Converts into a `&mut [T]`.
   ///
-  /// SAFETY
+  /// # SAFETY
   ///
   /// The reference must be be valid for the lifetime.
 
@@ -679,10 +680,15 @@ pub mod global {
   use core::alloc::Layout;
   use super::ptr;
 
-  /// Polyfill for `never_type`.
+  // polyfill for never_type
 
-  pub enum Never {
-  }
+  #[doc(hidden)]
+  pub trait Fun { type Output; }
+
+  impl<T> Fun for fn() -> T { type Output = T; }
+
+  #[doc(hidden)]
+  type Never = <fn() -> ! as Fun>::Output;
 
   /// Allocates memory with the global allocator.
   ///
