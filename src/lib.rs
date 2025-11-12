@@ -455,7 +455,7 @@ impl<T> core::ops::Add<isize> for ptr<T> {
   type Output = ptr<T>;
 
   #[inline(always)]
-  fn add(self, rhs: isize) -> ptr<T> {
+  fn add(self, rhs: isize) -> Self::Output {
     return ptr((self.0 as *mut T).wrapping_offset(rhs) as _, PhantomData);
   }
 }
@@ -464,7 +464,7 @@ impl<T> core::ops::Add<usize> for ptr<T> {
   type Output = ptr<T>;
 
   #[inline(always)]
-  fn add(self, rhs: usize) -> ptr<T> {
+  fn add(self, rhs: usize) -> Self::Output {
     return ptr((self.0 as *mut T).wrapping_add(rhs) as _, PhantomData);
   }
 }
@@ -473,7 +473,7 @@ impl<T> core::ops::Add<i32> for ptr<T> {
   type Output = ptr<T>;
 
   #[inline(always)]
-  fn add(self, rhs: i32) -> ptr<T> {
+  fn add(self, rhs: i32) -> Self::Output {
     return self + rhs as isize;
   }
 }
@@ -482,7 +482,7 @@ impl<T> core::ops::Add<u32> for ptr<T> {
   type Output = ptr<T>;
 
   #[inline(always)]
-  fn add(self, rhs: u32) -> ptr<T> {
+  fn add(self, rhs: u32) -> Self::Output {
     return self + rhs as usize;
   }
 }
@@ -491,7 +491,7 @@ impl<T> core::ops::Add<i64> for ptr<T> {
   type Output = ptr<T>;
 
   #[inline(always)]
-  fn add(self, rhs: i64) -> ptr<T> {
+  fn add(self, rhs: i64) -> Self::Output {
     return self + rhs as isize;
   }
 }
@@ -500,7 +500,7 @@ impl<T> core::ops::Add<u64> for ptr<T> {
   type Output = ptr<T>;
 
   #[inline(always)]
-  fn add(self, rhs: u64) -> ptr<T> {
+  fn add(self, rhs: u64) -> Self::Output {
     return self + rhs as usize;
   }
 }
@@ -509,7 +509,7 @@ impl<T> core::ops::Sub<isize> for ptr<T> {
   type Output = ptr<T>;
 
   #[inline(always)]
-  fn sub(self, rhs: isize) -> ptr<T> {
+  fn sub(self, rhs: isize) -> Self::Output {
     return ptr((self.0 as *mut T).wrapping_offset(rhs.wrapping_neg()) as _, PhantomData);
   }
 }
@@ -518,7 +518,7 @@ impl<T> core::ops::Sub<usize> for ptr<T> {
   type Output = ptr<T>;
 
   #[inline(always)]
-  fn sub(self, rhs: usize) -> ptr<T> {
+  fn sub(self, rhs: usize) -> Self::Output {
     return ptr((self.0 as *mut T).wrapping_sub(rhs) as _, PhantomData);
   }
 }
@@ -527,7 +527,7 @@ impl<T> core::ops::Sub<i32> for ptr<T> {
   type Output = ptr<T>;
 
   #[inline(always)]
-  fn sub(self, rhs: i32) -> ptr<T> {
+  fn sub(self, rhs: i32) -> Self::Output {
     return self - rhs as isize;
   }
 }
@@ -536,7 +536,7 @@ impl<T> core::ops::Sub<u32> for ptr<T> {
   type Output = ptr<T>;
 
   #[inline(always)]
-  fn sub(self, rhs: u32) -> ptr<T> {
+  fn sub(self, rhs: u32) -> Self::Output {
     return self - rhs as usize;
   }
 }
@@ -545,7 +545,7 @@ impl<T> core::ops::Sub<i64> for ptr<T> {
   type Output = ptr<T>;
 
   #[inline(always)]
-  fn sub(self, rhs: i64) -> ptr<T> {
+  fn sub(self, rhs: i64) -> Self::Output {
     return self - rhs as isize;
   }
 }
@@ -554,7 +554,7 @@ impl<T> core::ops::Sub<u64> for ptr<T> {
   type Output = ptr<T>;
 
   #[inline(always)]
-  fn sub(self, rhs: u64) -> ptr<T> {
+  fn sub(self, rhs: u64) -> Self::Output {
     return self - rhs as usize;
   }
 }
@@ -563,7 +563,7 @@ impl<T> core::ops::Sub<ptr<T>> for ptr<T> {
   type Output = usize;
 
   #[inline(always)]
-  fn sub(self, rhs: ptr<T>) -> usize {
+  fn sub(self, rhs: ptr<T>) -> Self::Output {
     return self.addr().wrapping_sub(rhs.addr()) / size_of::<T>();
   }
 }
