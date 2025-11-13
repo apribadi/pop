@@ -680,25 +680,16 @@ pub mod global {
   use core::alloc::Layout;
   use super::ptr;
 
-  // polyfill for never_type
-
-  #[doc(hidden)]
-  pub trait Fun { type Output; }
-
-  impl<T> Fun for fn() -> T { type Output = T; }
-
-  #[doc(hidden)]
-  type Never = <fn() -> ! as Fun>::Output;
-
   /// Allocates memory with the global allocator.
   ///
-  /// On failure, calls [`alloc::alloc::handle_alloc_error`] and does not return.
+  /// On failure, calls [`alloc::alloc::handle_alloc_error`] and does not
+  /// return.
   ///
   /// # SAFETY
   ///
   /// See [alloc::alloc::GlobalAlloc::alloc].
 
-  pub unsafe fn alloc<T>(layout: Layout) -> Result<ptr<T>, Never> {
+  pub unsafe fn alloc_layout<T>(layout: Layout) -> ptr<T> {
     let x = unsafe { alloc::alloc::alloc(layout) };
     let x = ptr::from(x).cast();
 
@@ -707,18 +698,19 @@ pub mod global {
       }
     }
 
-    return Ok(x);
+    return x;
   }
 
   /// Allocates zero-initialized memory with the global allocator.
   ///
-  /// On failure, calls [`alloc::alloc::handle_alloc_error`] and does not return.
+  /// On failure, calls [`alloc::alloc::handle_alloc_error`] and does not
+  /// return.
   ///
   /// # SAFETY
   ///
   /// See [alloc::alloc::GlobalAlloc::alloc_zeroed].
 
-  pub unsafe fn alloc_zeroed<T>(layout: Layout) -> Result<ptr<T>, Never> {
+  pub unsafe fn alloc_layout_zeroed<T>(layout: Layout) -> ptr<T> {
     let x = unsafe { alloc::alloc::alloc_zeroed(layout) };
     let x = ptr::from(x).cast();
 
@@ -727,7 +719,82 @@ pub mod global {
       }
     }
 
-    return Ok(x);
+    return x;
+  }
+
+  /// Allocates memory for a `T` with the global allocator.
+  ///
+  /// On failure, calls [`alloc::alloc::handle_alloc_error`] and does not
+  /// return.
+  ///
+  /// # SAFETY
+  ///
+  /// `T` must have non-zero size.
+
+  pub unsafe fn alloc<T>() -> ptr<T> {
+    debug_assert!(size_of::<T>() != 0);
+
+    return unsafe { alloc_layout(Layout::new::<T>()) };
+  }
+
+  /// Allocates zero-initialized memory for a `T` with the global allocator.
+  ///
+  /// On failure, calls [`alloc::alloc::handle_alloc_error`] and does not
+  /// return.
+  ///
+  /// # SAFETY
+  ///
+  /// `T` must have non-zero size.
+
+  pub unsafe fn alloc_zeroed<T>() -> ptr<T> {
+    debug_assert!(size_of::<T>() != 0);
+
+    return unsafe { alloc_layout_zeroed(Layout::new::<T>()) };
+  }
+
+  /// Allocates memory for a slice of `count` `T`s with the global allocator.
+  ///
+  /// On failure, calls [`alloc::alloc::handle_alloc_error`] and does not
+  /// return.
+  ///
+  /// # SAFETY
+  ///
+  /// - `T` must have non-zero size,
+  /// - `count` must be non-zero, and
+  /// - `count` `T`s must not overflow `Layout`.
+
+  pub unsafe fn alloc_slice<T>(count: usize) -> ptr<T> {
+    debug_assert!(size_of::<T>() != 0);
+    debug_assert!(count != 0);
+    debug_assert!(count <= isize::MAX as usize / size_of::<T>());
+
+    let align = align_of::<T>();
+    let size = count * size_of::<T>();
+    let layout = unsafe { Layout::from_size_align_unchecked(size, align) };
+    return unsafe { alloc_layout(layout) };
+  }
+
+  /// Allocates zero-initialized memory for a slice of `count` `T`s with the
+  /// global allocator.
+  ///
+  /// On failure, calls [`alloc::alloc::handle_alloc_error`] and does not
+  /// return.
+  ///
+  /// # SAFETY
+  ///
+  /// - `T` must have non-zero size,
+  /// - `count` must be non-zero, and
+  /// - `count` `T`s must not overflow `Layout`.
+
+  pub unsafe fn alloc_slice_zeroed<T>(count: usize) -> ptr<T> {
+    debug_assert!(size_of::<T>() != 0);
+    debug_assert!(count != 0);
+    debug_assert!(count <= isize::MAX as usize / size_of::<T>());
+
+    let align = align_of::<T>();
+    let size = count * size_of::<T>();
+    let layout = unsafe { Layout::from_size_align_unchecked(size, align) };
+    return unsafe { alloc_layout_zeroed(layout) };
   }
 
   /// Deallocates memory with the global allocator.
@@ -736,17 +803,43 @@ pub mod global {
   ///
   /// See [alloc::alloc::GlobalAlloc::dealloc].
 
-  pub unsafe fn dealloc<T>(x: ptr<T>, layout: Layout) {
+  pub unsafe fn dealloc_layout<T>(x: ptr<T>, layout: Layout) {
     unsafe { alloc::alloc::dealloc(x.cast().as_mut_ptr(), layout) };
   }
 
+  /// Deallocates memory for a `T` with the global allocator.
+  ///
+  /// # SAFETY
+  ///
+  /// `x` must be currently allocated for a `T`.
+
+  pub unsafe fn dealloc<T>(x: ptr<T>) {
+    unsafe { dealloc_layout(x, Layout::new::<T>()) };
+  }
+
+  /// Deallocates memory for `count` `T`s with the global allocator.
+  ///
+  /// # SAFETY
+  ///
+  /// `x` must be currently allocated for a slice of `count` `T`s.
+
+  pub unsafe fn dealloc_slice<T>(x: ptr<T>, count: usize) {
+    let align = align_of::<T>();
+    let size = count * size_of::<T>();
+    let layout = unsafe { Layout::from_size_align_unchecked(size, align) };
+    unsafe { dealloc_layout(x, layout) };
+  }
+
   /// Reallocates memory with the global allocator.
+  ///
+  /// On failure, does not alter the old block, calls
+  /// [`alloc::alloc::handle_alloc_error`], and does not return.
   ///
   /// # SAFETY
   ///
   /// See [alloc::alloc::GlobalAlloc::realloc].
 
-  pub unsafe fn realloc<T>(x: ptr<T>, layout: Layout, new_size: usize) -> Result<ptr<T>, Never> {
+  pub unsafe fn realloc_layout<T>(x: ptr<T>, layout: Layout, new_size: usize) -> ptr<T> {
     let x = unsafe { alloc::alloc::realloc(x.cast().as_mut_ptr(), layout, new_size) };
     let x = ptr::from(x).cast();
 
@@ -755,6 +848,28 @@ pub mod global {
       }
     }
 
-    return Ok(x);
+    return x;
+  }
+
+  /// Reallocates memory for a slice with the global allocator.
+  ///
+  /// On failure, does not alter the old block, calls
+  /// [`alloc::alloc::handle_alloc_error`], and does not return.
+  ///
+  /// # SAFETY
+  ///
+  /// - `x` must be currently allocated for a slice of `old_count` `T`s,
+  /// - `new_count` must be non-zero, and
+  /// - `new_count` `T`s must not overflow `Layout`.
+
+  pub unsafe fn realloc_slice<T>(x: ptr<T>, old_count: usize, new_count: usize) -> ptr<T> {
+    debug_assert!(new_count != 0);
+    debug_assert!(new_count <= isize::MAX as usize / size_of::<T>());
+
+    let align = align_of::<T>();
+    let old_size = old_count * size_of::<T>();
+    let new_size = new_count * size_of::<T>();
+    let layout = unsafe { Layout::from_size_align_unchecked(old_size, align) };
+    return unsafe { realloc_layout(x, layout, new_size) };
   }
 }
