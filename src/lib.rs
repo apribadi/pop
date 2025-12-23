@@ -90,12 +90,9 @@ impl<T> ptr<T> {
     return ptr(core::ptr::without_provenance_mut(addr), PhantomData);
   }
 
-  /// Creates a pointer with address zero and no provenance.
+  /// A pointer with address zero and no provenance.
 
-  #[inline(always)]
-  pub const fn null() -> ptr<T> {
-    return ptr::invalid(0);
-  }
+  pub const NULL: ptr<T> = ptr::invalid(0);
 
   /// Whether the pointer's address is zero.
 
@@ -655,7 +652,7 @@ impl<T> core::ops::SubAssign<u64> for ptr<T> {
 impl<T> Default for ptr<T> {
   #[inline(always)]
   fn default() -> ptr<T> {
-    return ptr::null();
+    return ptr::NULL;
   }
 }
 
